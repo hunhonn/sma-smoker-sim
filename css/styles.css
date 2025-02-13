@@ -1,0 +1,11 @@
+.animation-field{
+    width: 50vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #FAFAFA;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
