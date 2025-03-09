@@ -21,25 +21,23 @@
             </svg>
         </div>
         
-        <!-- First column - 16vw -->
         <div id="parameters">
-            <!-- Content for first column -->
+            <h3>Parameters</h3>
+            Age: <input type="number" id="age" value="25" min="0" max="100" step="1"><br>
+            Sticks a day: <input type="number" id="sticks_a_day" value="0" min="0" max="10" step="1"><br>
         </div>
-        
-        <!-- Second column - 18vw -->
+
         <div id="insights-div">
-            <!-- Content for second column -->
+
             <div id="graph-insights-tabs">
                 <div class="tab-header">
                     <button class="tab-button active" onclick="openTab(event, 'graphs')">Graphs</button>
                     <button class="tab-button" onclick="openTab(event, 'insights')">Insights</button>
                 </div>
                 <div id="graphs" class="tab-content active">
-                    <!-- Graphs content goes here -->
                      Graphs
                 </div>
                 <div id="insights" class="tab-content">
-                    <!-- Insights content goes here -->
                      Insights
                 </div>
             </div>

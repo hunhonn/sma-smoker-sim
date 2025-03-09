@@ -8,9 +8,12 @@ var pathElement;
 var pathLength;
 
 var bloodCells = [];
-var cellSpeed = 0.0005;
+var baseBloodCellSpeed = 0.05;
 var speedSlider = document.getElementById("slider1");
 var veinPathD = "M6.5 103V84.5H23H31.5V49.5H56V25.5H72V6H214.5V24H235V50.5H253V455";
+
+var heartAttackRisk = 0;
+var bloodPressure = 1;
 
 window.addEventListener("load", init);
 
@@ -38,9 +41,63 @@ function init() {
     // Get the DOM element to measure the length of the path
     pathElement = document.getElementById("veinPath");
     pathLength = pathElement.getTotalLength();
+
+    // Set up input event listeners
+    document.getElementById("sticks_a_day").addEventListener("input", updateHealthMetrics);
+
+    // Initialize health metrics
+    updateHealthMetrics();
 }
 
-// Add a new blood cell at the start of the vein (progress = 0)
+// ==================== Human Body Characteristics Functions ====================
+
+function updateHealthMetrics() {
+    var sticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    
+    // Calculate blood pressure: 1.0 is normal, increases by 0.1 per stick
+    bloodPressure = 1 + (sticksPerDay * 0.1);
+    
+    // Calculate heart attack risk: 0-100%, increases non-linearly with sticks
+    // Using sigmoid function to create realistic risk curve
+    heartAttackRisk = 1 / (1 + Math.exp(-0.5 * (sticksPerDay - 5)));
+    
+    // Adjust cell speed based on blood pressure
+    cellSpeed = baseBloodCellSpeed * bloodPressure;
+    
+    // Update UI indicators
+    updateHealthIndicators();
+}
+
+// Function to update visual health indicators
+function updateHealthIndicators() {
+    // Update blood vessel appearance based on blood pressure
+    // bloodPath.attr("stroke", d3.interpolateRgb("#BB2117", "#FF0000")(bloodPressure - 1));
+    
+    // Display risk values in the insights panel
+    var insights = document.getElementById("insights");
+    if (insights) {
+        insights.innerHTML = "<h3>Health Metrics</h3>" +
+                           "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
+                           "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
+                           "<p>Blood Cell Speed: " + cellSpeed.toFixed(3) + "</p>";
+    }
+    
+    // Implement heart attack at very high risk (optional feature)
+    if (heartAttackRisk > 0.9 && Math.random() < heartAttackRisk/100) {
+        // Small chance of heart attack if risk is very high
+        triggerHeartAttack();
+    }
+}
+
+// Optional function to simulate a heart attack
+function triggerHeartAttack() {
+    stopSimulation();
+    alert("Heart attack occurred! The simulation will reset.");
+    resetSimulation();
+}
+
+// ==================== Blood Cell Atributes ====================
+
 function addDynamicBloodCell(){
     var cell = { progress: 0 };
     bloodCells.push(cell);
@@ -49,7 +106,7 @@ function addDynamicBloodCell(){
 // Update the progress of each blood cell along the path
 function updateBloodCells(){
     bloodCells.forEach(function(cell) {
-        cell.progress += cellSpeed*speedSlider.value;
+        cell.progress += baseBloodCellSpeed;
     });
     // Remove blood cells that have reached the end of the path
     bloodCells = bloodCells.filter(function(cell) {
@@ -86,10 +143,13 @@ function updateSurface(){
 // The simulation step: possibly add a new cell, update all cells, and redraw them.
 function simStep(){
     if (!isRunning) return;
-    // Occasionally add a new blood cell (adjust probability as needed)
-    if (Math.random() < 0.1){
+    
+    // Add more cells when blood pressure is higher (more frequent spawning)
+    var spawnProbability = 0.1 * bloodPressure;
+    if (Math.random() < spawnProbability){
         addDynamicBloodCell();
     }
+    
     updateBloodCells();
     updateSurface();
 }
