@@ -4,24 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMA-Simulator</title>
+    <script type = "text/javascript" src = "js/d3.min.js"></script>
     <link rel="stylesheet" href="./css/styles.css" media="screen">
     
 </head>
-<body>
-    <div class="animation-field">
-        <h1>SMA-Simulator</h1>
-    </div>
-
-    <div class="container">
-        <div class="input-field">
-            <label for="input">Enter the number of elements in the array</label>
-            <input type="number" id="input" placeholder="Enter the number of elements in the array">
-            <button id="submit">Submit</button>
+<body class="official bgColor0">
+	
+    <div id="game-platform" style="position: absolute; top: 0; left: 0; right: 0; bottom: 100px; padding: 20px; display: flex;">
+        <!-- The surface is the main playing field for the game -->
+        <svg id="surface" style="width: 40vw; height: 100%; background: url('public/img/Human_Body2.png') no-repeat center center; background-size: contain;" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        </svg>
+        
+        <!-- First column - 16vw -->
+        <div id="parameters">
+            <!-- Content for first column -->
         </div>
-        <div class="output-field">
-            <h2>Output</h2>
-            <div class="output"></div>
+        
+        <!-- Second column - 18vw -->
+        <div id="insights-div">
+            <!-- Content for second column -->
+            <div id="graph-insights-tabs">
+                <div class="tab-header">
+                    <button class="tab-button active" onclick="openTab(event, 'graphs')">Graphs</button>
+                    <button class="tab-button" onclick="openTab(event, 'insights')">Insights</button>
+                </div>
+                <div id="graphs" class="tab-content active">
+                    <!-- Graphs content goes here -->
+                     Graphs
+                </div>
+                <div id="insights" class="tab-content">
+                    <!-- Insights content goes here -->
+                     Insights
+                </div>
+            </div>
+             <div id="status-table">
 
-    <script src="./js/script.js"></script>
+             </div>
+        </div>
+    </div>
+	
+	<div id="title"  style="position:absolute;
+                            bottom:0;
+                            left:0;
+                            color:#FAFAFA">S.M.O.K.E.R<br>Smoking Mitigation Outreach for Knowledge and Education Research</div>
+	
+	<div id="controls" style="position:absolute;bottom:0;left:45%;color:#FAFAFA">Animation Speed:
+	<input id="slider1" type="range" min="0" value="275" max="1000" step="10" onchange="redrawWindow();" />
+    <button id="StartORPause" style="margin-left:1rem; vertical-align: middle;"onclick="startSimulation();">Start/Pause</button> 
+	</div>
+	
+	<!-- <a id="credits" href="http://www.icons-land.com" style="position:absolute;bottom:0;right:0">Icons by icons-land.com</a> -->
+	
+	
+	
+	<!-- Anything below this line should be a popup window or dialog or a late-loading library -->
+	
+	<script type="text/javascript" src="js/script.js"></script>
+	
 </body>
 </html>
