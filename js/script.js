@@ -21,6 +21,8 @@ var ageProgressionRate = 0.1; // how much age increases per step
 var stickProgressionRate = 0.1; // How much sticks per day increases per step
 var simulationYear = 0; // Years elapsed in simulation
 var initialSticksPerDay = 0; // Store initial value
+var currentSticksPerDay = 0;
+
 
 
 window.addEventListener("load", init);
@@ -100,11 +102,13 @@ function calculateLifeExpectancy() {
 
 // Get current number of cigarettes per day based on simulation progression
 function getCurrentSticks() {
-    return initialSticksPerDay + (simulationYear * stickProgressionRate);
+    return isRunning ? currentSticksPerDay : initialSticksPerDay;
 }
 
 function updateHealthMetrics() {
-    var sticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    // Use the tracked value when simulation is running, otherwise use input value
+    var sticksPerDay = isRunning ? currentSticksPerDay : 
+                       parseFloat(document.getElementById("sticks_a_day").value) || 0;
     
     // Calculate blood pressure: 1.0 is normal, increases by 0.1 per stick
     bloodPressure = 1 + (sticksPerDay * 0.1);
@@ -138,7 +142,7 @@ function updateHealthIndicators() {
         insights.innerHTML = "<h3>Health Metrics</h3>" +
                            "<p>Current Age: " + currentAge.toFixed(1) + "</p>" +
                            "<p>Years Simulated: " + simulationYear.toFixed(1) + "</p>" +
-                           "<p>Cigarettes/Day: " + parseFloat(document.getElementById("sticks_a_day").value).toFixed(1) + "</p>" +
+                           "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
                            "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
                            "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
                            "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
@@ -214,9 +218,7 @@ function simStep() {
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
     
     // Update sticks per day based on progression
-    document.getElementById("sticks_a_day").value = 
-        Math.min(10, initialSticksPerDay + (simulationYear * stickProgressionRate)).toFixed(1);
-    
+    currentSticksPerDay = Math.min(10, initialSticksPerDay + (simulationYear * stickProgressionRate));
     // Update health metrics
     updateHealthMetrics();
     
