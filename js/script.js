@@ -1,3 +1,5 @@
+import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
+
 var animationDelay = 100;
 var simTimer;
 var isRunning = false;
@@ -7,22 +9,23 @@ var bloodPath;
 var pathElement;
 var pathLength;
 
+// ==================== Heart Initialization ====================
 var bloodCells = [];
 var baseBloodCellSpeed = 0.05;
+var cellSpeed = baseBloodCellSpeed; // Add this line
 var speedSlider = document.getElementById("slider1");
-var veinPathD = "M6.5 103V84.5H23H31.5V49.5H56V25.5H72V6H214.5V24H235V50.5H253V455";
+var veinPathD = "M6.5 103V84.5H23H31.5V49.5H56V25.5H72V6H204.5V24H235V50.5H253V455";
 
 var heartAttackRisk = 0;
 var bloodPressure = 1;
-
+// ==================== Parameter Initialization ====================
 var currentAge = 25;
 var lifeExpectancy = 80;
 var ageProgressionRate = 0.1; // how much age increases per step
 var stickProgressionRate = 0.1; // How much sticks per day increases per step
 var simulationYear = 0; // Years elapsed in simulation
 var initialSticksPerDay = 0; // Store initial value
-var currentSticksPerDay = 0;
-
+var currentSticksPerDay = initialSticksPerDay;
 
 
 window.addEventListener("load", init);
@@ -52,12 +55,25 @@ function init() {
     pathElement = document.getElementById("veinPath");
     pathLength = pathElement.getTotalLength();
 
+    initRespiratorySystem(svg);
+
     // Set up input event listeners
     document.getElementById("age").addEventListener("input", updateInitialAge);
     document.getElementById("sticks_a_day").addEventListener("input", function() {
         updateInitialSticks(); // Add this line to update the initial sticks value
         updateHealthMetrics();
     });
+
+    document.getElementById("StartORPause").addEventListener("click", startSimulation);
+    
+    // For tabs
+    const tabButtons = document.getElementsByClassName("tab-button");
+    for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].addEventListener("click", function(event) {
+            const tabName = this.getAttribute("data-tab"); // You'll need to add this attribute
+            openTab(event, tabName);
+        });
+    }
 
     // Initialize health metrics
     updateInitialAge();
@@ -135,6 +151,8 @@ function updateHealthIndicators() {
     bloodPath.attr("stroke", d3.interpolateRgb("#BB2117", "#fe0204")(bloodPressure - 1));
     // bloodPath.attr("stroke-width", 10 + (bloodPressure - 1) * 10)
     // .attr("stroke", d3.interpolateRgb("#BB2117", "#fe0204")(bloodPressure - 1));
+
+    var lungHealth = getLungHealth();
     
     // Display risk values in the insights panel
     var insights = document.getElementById("insights");
@@ -145,6 +163,9 @@ function updateHealthIndicators() {
                            "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
                            "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
                            "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
+                           "<p>Lung Capacity: " + lungHealth.capacity.toFixed(1) + "%</p>" +
+                           "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
+                           "<p>Lung Damage: " + lungHealth.damage.toFixed(1) + "%</p>" +
                            "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
                            "<p>Years of Life Lost: " + (80 - lifeExpectancy).toFixed(1) + "</p>";
     }
@@ -174,13 +195,15 @@ function addDynamicBloodCell(){
 // Update the progress of each blood cell along the path
 function updateBloodCells(){
     bloodCells.forEach(function(cell) {
-        cell.progress += baseBloodCellSpeed;
+        cell.progress += cellSpeed;
     });
     // Remove blood cells that have reached the end of the path
     bloodCells = bloodCells.filter(function(cell) {
         return cell.progress < 1;
     });
 }
+
+// ==================== SIM Core Atributes ====================
 
 // Update the positions of the red dots on the SVG drawing surface
 function updateSurface(){
@@ -227,6 +250,8 @@ function simStep() {
         endSimulation();
         return;
     }
+
+    respiratorySimStep(isRunning, currentSticksPerDay);
     
     // Regular simulation steps
     var spawnProbability = 0.1 * bloodPressure;
@@ -237,6 +262,8 @@ function simStep() {
     updateBloodCells();
     updateSurface();
 }
+
+// ==================== UI Atributes ====================
 
 // End simulation when life expectancy is reached
 function endSimulation() {
@@ -258,6 +285,7 @@ function endSimulation() {
 function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        console.log("started sim")
         // Start the simulation
         simTimer = window.setInterval(simStep, animationDelay);
         isRunning = true;
