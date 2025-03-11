@@ -14,7 +14,7 @@ var bloodCells = [];
 var baseBloodCellSpeed = 0.05;
 var cellSpeed = baseBloodCellSpeed; // Add this line
 var speedSlider = document.getElementById("slider1");
-var veinPathD = "M6.5 103V84.5H23H31.5V49.5H56V25.5H72V6H204.5V24H235V50.5H253V455";
+var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
 var bloodPressure = 1;
