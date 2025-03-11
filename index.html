@@ -25,6 +25,20 @@
             <h3>Parameters</h3>
             Age: <input type="number" id="age" value="25" min="0" max="100" step="1"><br>
             Sticks a day: <input type="number" id="sticks_a_day" value="0" min="0" max="10" step="1"><br>
+            <div class="control-panel">
+                <label for="family-influence">Family Influence: <span id="family-influence-value">0</span></label>
+                <input type="range" id="family-influence" min="-1" max="1" step="0.1" value="0">
+                <br>
+                
+                <label for="govt-intervention">Government Intervention:<span id="govt-intervention-value">0</span></label>
+                <input type="range" id="govt-intervention" min="0" max="1" step="0.1" value="0.5">
+                <br>
+                
+                <label for="life-stress">Life Stress Level:<span id="life-stress-value">0</span></label>
+                <input type="range" id="life-stress" min="0" max="1" step="0.1" value="0.3">
+                <br>
+
+              </div>
         </div>
 
         <div id="insights-div">

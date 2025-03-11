@@ -12,9 +12,17 @@ var lungGroup;
 window.addEventListener("load", initRespiratorySystem);
 // Function to initialize the respiratory system
 function initRespiratorySystem(svg) {
-    if (!svg) {
-        console.error("No SVG provided to initRespiratorySystem");
-        return;
+    if (!svg || !svg.append) {
+        console.error("Invalid SVG provided to initRespiratorySystem");
+        
+        // Try to recover by selecting the SVG element from the DOM
+        svg = d3.select("#bodySurface");
+        
+        // If still not valid, return
+        if (!svg.append) {
+            console.error("Could not recover SVG element");
+            return;
+        }
     }
     lungGroup = svg.append("g")
                   .attr("transform", "translate(175, 150)"); // Position it appropriately
@@ -96,7 +104,7 @@ function updateAirParticles(sticksPerDay) {
 function updateLungHealth() {
     // Lung capacity decreases with tar accumulation
     lungCapacity = 100 - (tarAccumulation)
-    console.log("lung cap ",lungCapacity)
+    // console.log("lung cap ",lungCapacity)
     
     // Tar accumulation increases with smoking, slight natural cleaning occurs
     tarAccumulation = Math.min(100, tarAccumulation);

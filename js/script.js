@@ -18,15 +18,26 @@ var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
 var bloodPressure = 1;
+var heart_oxygen_level = 100;
+var heartStress = 0;
 // ==================== Parameter Initialization ====================
 var currentAge = 25;
 var lifeExpectancy = 80;
 var ageProgressionRate = 0.1; // how much age increases per step
-var stickProgressionRate = 0.1; // How much sticks per day increases per step
 var simulationYear = 0; // Years elapsed in simulation
 var initialSticksPerDay = 0; // Store initial value
-var currentSticksPerDay = initialSticksPerDay;
+var currentSticksPerDay;
 
+// ==================== Social Circle Initialization ====================
+var familyInfluence = 0;
+var lifeStressLevel = 0.3;
+
+// ==================== Brain Initialization ====================
+var addictionFactor = 0;
+// ==================== Govt Intervention Initialization ====================
+var govtInterventionLevel = 0;
+
+// ==================== Initialization ====================
 
 window.addEventListener("load", init);
 
@@ -60,10 +71,28 @@ function init() {
     // Set up input event listeners
     document.getElementById("age").addEventListener("input", updateInitialAge);
     document.getElementById("sticks_a_day").addEventListener("input", function() {
-        updateInitialSticks(); // Add this line to update the initial sticks value
+        updateInitialSticks();
         updateHeartHealth();
     });
 
+    // Add event listeners for the sliders
+    document.getElementById("family-influence").addEventListener("input", function() {
+        familyInfluence = parseFloat(this.value);
+        updateSliderLabel(this, "family-influence-value");
+        console.log("Family influence set to:", familyInfluence);
+    });
+    
+    document.getElementById("govt-intervention").addEventListener("input", function() {
+        govtInterventionLevel = parseFloat(this.value);
+        updateSliderLabel(this, "govt-intervention-value")
+    });
+    
+    document.getElementById("life-stress").addEventListener("input", function() {
+        lifeStressLevel = parseFloat(this.value);
+        updateSliderLabel(this, "life-stress-value")
+        console.log("Life stress level set to:", lifeStressLevel);
+    });
+    
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
     
     // For tabs
@@ -93,6 +122,7 @@ function updateInitialAge() {
 
 function updateInitialSticks() {
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    currentSticksPerDay = initialSticksPerDay;
     calculateLifeExpectancy();
 }
 
@@ -105,7 +135,7 @@ function calculateLifeExpectancy() {
     // Research shows heavy smoking (20+ cigarettes/day) can reduce life by 10+ years
     const currentSticks = getCurrentSticks();
     const yearsReduced = currentSticks *(0.000456621/12); // Each stick reduces life by 20 minutes
-    console.log("years reduced ",yearsReduced)
+    // console.log("years reduced ",yearsReduced)
     
     lifeExpectancy = baseLifeExpectancy - yearsReduced;
     
@@ -125,9 +155,23 @@ function updateHeartHealth() {
     // Calculate blood pressure: 1.0 is normal, increases by 0.1 per stick
     bloodPressure = 1 + (sticksPerDay * 0.1);
     
+    heart_oxygen_level = 100 - (sticksPerDay * 0.0005);
+
+    // Calculate heart stress based on both oxygen level and blood pressure
+    // Heart stress increases when oxygen is low and blood pressure is high
+    // Formula: higher values = more stress (0-100 scale)
+    heartStress = ((100 - heart_oxygen_level) * 0.5) + ((bloodPressure - 1) * 50);
+    heartStress = Math.min(100, Math.max(0, heartStress)); // Clamp between 0-100
+
     // Calculate heart attack risk: 0-100%, increases non-linearly with sticks
     // Using sigmoid function to create realistic risk curve
-    heartAttackRisk = 1 / (1 + Math.exp(-0.5 * (sticksPerDay - 5)));
+
+    if (currentAge <  50){
+        heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50)));
+    } else {
+        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 45))),heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50))));
+    }
+
     
     // Adjust cell speed based on blood pressure
     cellSpeed = baseBloodCellSpeed * bloodPressure;
@@ -165,9 +209,11 @@ function updateHealthIndicators() {
                            "<p>Years of Life Lost: " + (80 - lifeExpectancy).toFixed(1) + "</p>";
     }
     
+    console.log("heartstress",heartStress);
+    console.log("heart attack risk",heartAttackRisk);
     // Random chance of heart attack based on risk
-    // console.log(heartAttackRisk)
-    if (heartAttackRisk > 0.5 && Math.random() < heartAttackRisk/50) {
+    // if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk/50) {
+    if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
 }
@@ -178,6 +224,37 @@ function triggerHeartAttack() {
     document.getElementById("StartORPause").textContent = "Start";
     alert("Heart attack occurred! The simulation has been stopped.");
     resetSimulation();
+}
+
+// Function to update number of cigs
+function updateSticksPerDay() {
+    // Base progression from initial habits
+    let newSticksPerDay = currentSticksPerDay;
+    
+    // Update addiction factor (makes it harder to quit the longer you smoke)
+    addictionFactor = Math.min(1, addictionFactor + (0.01 * simulationYear * (currentSticksPerDay / 20)));
+    
+    // 1. Personal stress factor (increases with age and existing consumption)
+    const stressFactor = lifeStressLevel * 0.3 * (1 + (simulationYear / 20));
+    
+    // 2. Family influence (-1 to 1 scale)
+    // Negative values decrease smoking, positive values increase
+    const familyEffect = familyInfluence * 0.2;
+    
+    // 3. Government intervention (increases in effectiveness over time)
+    const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
+    
+    // 4. Random life events (can be positive or negative)
+    const lifeEventImpact = (Math.random() - 0.5) * 0.2;
+    
+    // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
+    let netChange = stressFactor + familyEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
+    
+    // Apply change to current sticks per day
+    newSticksPerDay += netChange;
+    
+    // Ensure smoking doesn't go below zero
+    return Math.max(0, newSticksPerDay);
 }
 
 // ==================== Blood Cell Atributes ====================
@@ -199,6 +276,11 @@ function updateBloodCells(){
 }
 
 // ==================== SIM Core Atributes ====================
+
+function updateSliderLabel(slider, labelId) {
+    const value = parseFloat(slider.value);
+    document.getElementById(labelId).textContent = value.toFixed(1);
+}
 
 // Update the positions of the red dots on the SVG drawing surface
 function updateSurface(){
@@ -236,7 +318,7 @@ function simStep() {
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
     
     // Update sticks per day based on progression
-    currentSticksPerDay = initialSticksPerDay + (simulationYear * stickProgressionRate);
+    currentSticksPerDay = updateSticksPerDay();
     // Update health metrics
     updateHeartHealth();
     
@@ -280,7 +362,8 @@ function endSimulation() {
 function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-        console.log("started sim")
+        currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        console.log("started sim with", currentSticksPerDay, "sticks per day");
         // Start the simulation
         simTimer = window.setInterval(simStep, animationDelay);
         isRunning = true;
@@ -306,8 +389,8 @@ function resetSimulation() {
     // Reset simulation values
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
-    simulationYear = 0;
-    document.getElementById("sticks_a_day").value = initialSticksPerDay;
+    initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
     currentAge = parseFloat(document.getElementById("age").value) || 25;
     
     // Update displays
