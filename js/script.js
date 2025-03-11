@@ -61,7 +61,7 @@ function init() {
     document.getElementById("age").addEventListener("input", updateInitialAge);
     document.getElementById("sticks_a_day").addEventListener("input", function() {
         updateInitialSticks(); // Add this line to update the initial sticks value
-        updateHealthMetrics();
+        updateHeartHealth();
     });
 
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
@@ -78,7 +78,7 @@ function init() {
     // Initialize health metrics
     updateInitialAge();
     updateInitialSticks();
-    updateHealthMetrics();
+    updateHeartHealth();
 
     calculateLifeExpectancy(); //Calculate life expectancy
 }
@@ -104,14 +104,10 @@ function calculateLifeExpectancy() {
     // Each cigarette per day reduces life expectancy
     // Research shows heavy smoking (20+ cigarettes/day) can reduce life by 10+ years
     const currentSticks = getCurrentSticks();
-    const yearsReduced = currentSticks * 0.5; // Each stick reduces life by 6 months
+    const yearsReduced = currentSticks *(0.000456621/12); // Each stick reduces life by 20 minutes
+    console.log("years reduced ",yearsReduced)
     
     lifeExpectancy = baseLifeExpectancy - yearsReduced;
-    
-    // Minimum life expectancy
-    if (lifeExpectancy < currentAge + 5) {
-        lifeExpectancy = currentAge + 5;
-    }
     
     return lifeExpectancy;
 }
@@ -121,7 +117,7 @@ function getCurrentSticks() {
     return isRunning ? currentSticksPerDay : initialSticksPerDay;
 }
 
-function updateHealthMetrics() {
+function updateHeartHealth() {
     // Use the tracked value when simulation is running, otherwise use input value
     var sticksPerDay = isRunning ? currentSticksPerDay : 
                        parseFloat(document.getElementById("sticks_a_day").value) || 0;
@@ -163,15 +159,14 @@ function updateHealthIndicators() {
                            "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
                            "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
                            "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
-                           "<p>Lung Capacity: " + lungHealth.capacity.toFixed(1) + "%</p>" +
+                           "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
                            "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
-                           "<p>Lung Damage: " + lungHealth.damage.toFixed(1) + "%</p>" +
                            "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
                            "<p>Years of Life Lost: " + (80 - lifeExpectancy).toFixed(1) + "</p>";
     }
     
     // Random chance of heart attack based on risk
-    console.log(heartAttackRisk)
+    // console.log(heartAttackRisk)
     if (heartAttackRisk > 0.5 && Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
@@ -241,9 +236,9 @@ function simStep() {
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
     
     // Update sticks per day based on progression
-    currentSticksPerDay = Math.min(10, initialSticksPerDay + (simulationYear * stickProgressionRate));
+    currentSticksPerDay = initialSticksPerDay + (simulationYear * stickProgressionRate);
     // Update health metrics
-    updateHealthMetrics();
+    updateHeartHealth();
     
     // Check if we've reached life expectancy
     if (currentAge >= lifeExpectancy) {
@@ -316,7 +311,7 @@ function resetSimulation() {
     currentAge = parseFloat(document.getElementById("age").value) || 25;
     
     // Update displays
-    updateHealthMetrics();
+    updateHeartHealth();
 }
 
 function stopSimulation() {

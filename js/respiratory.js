@@ -7,7 +7,6 @@ var airParticles = [];
 var baseAirParticleSpeed = 0.03;
 var lungCapacity = 100; // percentage
 var tarAccumulation = 0; // percentage
-var lungDamage = 0; // percentage
 var lungGroup;
 
 window.addEventListener("load", initRespiratorySystem);
@@ -52,24 +51,24 @@ function respiratorySimStep(isRunning, sticksPerDay) {
     
     // Potentially add new particles
     // Higher chance of smoke particles based on sticks per day
-    if (Math.random() < 0.1) {
+    if (Math.random() < 0.7) {
         // Determine if this is smoke based on sticks per day
-        var isSmoke = Math.random() < (sticksPerDay / 10);
+        var isSmoke = Math.random() < 0.661;
         addAirParticle(isSmoke);
     }
     
     // Update existing particles
-    updateAirParticles();
+    updateAirParticles(sticksPerDay);
     
     // Update lung health based on smoking
-    updateLungHealth(sticksPerDay);
+    updateLungHealth();
     
     // Update visual appearance
-    updateLungAppearance();
+    // updateLungAppearance();
 }
 
 // Update air particles movement
-function updateAirParticles() {
+function updateAirParticles(sticksPerDay) {
     // Move particles along the airway
     airParticles.forEach(function(particle) {
         particle.progress -= baseAirParticleSpeed;
@@ -81,7 +80,8 @@ function updateAirParticles() {
         if (particle.progress <= 0) {
             // If it's smoke, accumulate damage
             if (particle.isSmoke) {
-                tarAccumulation += 0.1;
+                tarAccumulation += 0.0295 * sticksPerDay;
+                console.log("tar accumulated ",tarAccumulation);
             }
             return false;
         }
@@ -93,15 +93,13 @@ function updateAirParticles() {
 }
 
 // Update lung health based on smoking habits
-function updateLungHealth(sticksPerDay) {
+function updateLungHealth() {
     // Lung capacity decreases with tar accumulation
-    lungCapacity = Math.max(60, 100 - (tarAccumulation * 0.05));
+    lungCapacity = 100 - (tarAccumulation)
+    console.log("lung cap ",lungCapacity)
     
     // Tar accumulation increases with smoking, slight natural cleaning occurs
-    tarAccumulation = Math.min(100, tarAccumulation + (sticksPerDay * 0.02) - 0.01);
-    
-    // Lung damage increases with tar accumulation
-    lungDamage = Math.min(100, tarAccumulation * 0.8);
+    tarAccumulation = Math.min(100, tarAccumulation);
 }
 
 // Update the visualization
@@ -143,42 +141,41 @@ function updateRespiratorySystem() {
 }
 
 // Update lung appearance based on health
-function updateLungAppearance() {
-    if (!lungGroup) return;
+// function updateLungAppearance() {
+//     if (!lungGroup) return;
     
-    // Calculate color based on tar accumulation
-    var healthyColor = "#f8e6e6"; // Light pink
-    var damagedColor = "#4d4d4d"; // Dark gray
+//     // Calculate color based on tar accumulation
+//     var healthyColor = "#f8e6e6"; // Light pink
+//     var damagedColor = "#4d4d4d"; // Dark gray
     
-    // Linear interpolation between healthy and damaged color
-    var damageRatio = tarAccumulation / 100;
-    var r = Math.floor(248 * (1 - damageRatio) + 77 * damageRatio);
-    var g = Math.floor(230 * (1 - damageRatio) + 77 * damageRatio);
-    var b = Math.floor(230 * (1 - damageRatio) + 77 * damageRatio);
+//     // Linear interpolation between healthy and damaged color
+//     var damageRatio = tarAccumulation / 100;
+//     var r = Math.floor(248 * (1 - damageRatio) + 77 * damageRatio);
+//     var g = Math.floor(230 * (1 - damageRatio) + 77 * damageRatio);
+//     var b = Math.floor(230 * (1 - damageRatio) + 77 * damageRatio);
     
-    var lungColor = "rgb(" + r + "," + g + "," + b + ")";
+//     var lungColor = "rgb(" + r + "," + g + "," + b + ")";
     
-    // Update lung color
-    lungGroup.selectAll(".lung")
-           .attr("fill", lungColor);
+//     // Update lung color
+//     lungGroup.selectAll(".lung")
+//            .attr("fill", lungColor);
     
-    // Update lung size based on capacity
-    var capacityRatio = lungCapacity / 100;
-    lungGroup.select(".right-lung")
-           .attr("rx", 40 * capacityRatio)
-           .attr("ry", 60 * capacityRatio);
+//     // Update lung size based on capacity
+//     var capacityRatio = lungCapacity / 100;
+//     lungGroup.select(".right-lung")
+//            .attr("rx", 40 * capacityRatio)
+//            .attr("ry", 60 * capacityRatio);
            
-    lungGroup.select(".left-lung")
-           .attr("rx", 40 * capacityRatio)
-           .attr("ry", 60 * capacityRatio);
-}
+//     lungGroup.select(".left-lung")
+//            .attr("rx", 40 * capacityRatio)
+//            .attr("ry", 60 * capacityRatio);
+// }
 
 // Function to get lung health metrics for displaying in UI
 function getLungHealth() {
     return {
         capacity: lungCapacity,
-        tarAccumulation: tarAccumulation,
-        damage: lungDamage
+        tarAccumulation: tarAccumulation
     };
 }
 
