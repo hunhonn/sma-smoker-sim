@@ -36,7 +36,7 @@ var lifeStressLevel = 0.3;
 var addictionFactor = 0;
 // ==================== Govt Intervention Initialization ====================
 var govtInterventionLevel = 0;
-
+var retirementAge = 63; //default
 // ==================== Initialization ====================
 
 window.addEventListener("load", init);
@@ -68,18 +68,24 @@ function init() {
 
     initRespiratorySystem(svg);
 
+    // Initialize span values for sliders
+    document.getElementById("family-influence-value").textContent = document.getElementById("family-influence").value;
+    document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
+    document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
+
     // Set up input event listeners
     document.getElementById("age").addEventListener("input", updateInitialAge);
     document.getElementById("sticks_a_day").addEventListener("input", function() {
         updateInitialSticks();
         updateHeartHealth();
     });
+    document.getElementById("retirement_age").addEventListener("input", updateRetirementAge);
 
     // Add event listeners for the sliders
     document.getElementById("family-influence").addEventListener("input", function() {
         familyInfluence = parseFloat(this.value);
         updateSliderLabel(this, "family-influence-value");
-        console.log("Family influence set to:", familyInfluence);
+        // console.log("Family influence set to:", familyInfluence);
     });
     
     document.getElementById("govt-intervention").addEventListener("input", function() {
@@ -90,7 +96,7 @@ function init() {
     document.getElementById("life-stress").addEventListener("input", function() {
         lifeStressLevel = parseFloat(this.value);
         updateSliderLabel(this, "life-stress-value")
-        console.log("Life stress level set to:", lifeStressLevel);
+        // console.log("Life stress level set to:", lifeStressLevel);
     });
     
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
@@ -124,6 +130,11 @@ function updateInitialSticks() {
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
     currentSticksPerDay = initialSticksPerDay;
     calculateLifeExpectancy();
+}
+
+function updateRetirementAge() {
+    retirementAge = parseFloat(document.getElementById("retirement_age").value) || 63;
+    console.log("Retirement age set to:", retirementAge);
 }
 
 // Function to calculate life expectancy based on smoking habits
@@ -160,7 +171,7 @@ function updateHeartHealth() {
     // Calculate heart stress based on both oxygen level and blood pressure
     // Heart stress increases when oxygen is low and blood pressure is high
     // Formula: higher values = more stress (0-100 scale)
-    heartStress = ((100 - heart_oxygen_level) * 0.5) + ((bloodPressure - 1) * 50);
+    heartStress = ((100 - heart_oxygen_level) * 0.5) + ((bloodPressure - 1) * 30);
     heartStress = Math.min(100, Math.max(0, heartStress)); // Clamp between 0-100
 
     // Calculate heart attack risk: 0-100%, increases non-linearly with sticks
@@ -212,8 +223,8 @@ function updateHealthIndicators() {
     console.log("heartstress",heartStress);
     console.log("heart attack risk",heartAttackRisk);
     // Random chance of heart attack based on risk
-    // if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk/50) {
-    if (Math.random() < heartAttackRisk/50) {
+    if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk/50) {
+    // if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
 }
@@ -233,9 +244,17 @@ function updateSticksPerDay() {
     
     // Update addiction factor (makes it harder to quit the longer you smoke)
     addictionFactor = Math.min(1, addictionFactor + (0.01 * simulationYear * (currentSticksPerDay / 20)));
+
+    let stressMultiplier;
+    if (currentAge >= retirementAge) {
+        // Gradually reduce stress after retirement (down to 50% of normal stress)
+        stressMultiplier = Math.max(0.5, 1.0 - ((currentAge - 63) / 20));
+    } else {
+        stressMultiplier = 1.0 + (simulationYear / 30); // Normal stress progression before retirement
+    }
     
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = lifeStressLevel * 0.3 * (1 + (simulationYear / 20));
+    const stressFactor = lifeStressLevel * 0.3 * stressMultiplier;
     
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
