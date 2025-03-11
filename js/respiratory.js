@@ -1,5 +1,5 @@
 // Respiratory system simulation for the smoker simulator
-var airwayPathD = "M18 185.5V209H5V225.5H45.5V155.5H80.5V144.5H101.5V40.5";
+var airwayPathD = "M270 90h-70v170l-100,107-17-28,52,58,2,-58";
 var airwayPath;
 var airwayElement;
 var airwayLength;
@@ -18,7 +18,7 @@ function initRespiratorySystem(svg) {
     }
     lungGroup = svg.append("g")
                   .attr("transform", "translate(175, 150)"); // Position it appropriately
-
+ 
     // Define the airway path - this is a simplified bronchial tree
     // var airwayPathD = "M0,0 C10,50 -10,100 0,150 C5,170 15,180 30,190 M0,150 C-5,170 -15,180 -30,190";
 
@@ -26,7 +26,7 @@ function initRespiratorySystem(svg) {
     airwayPath = lungGroup.append("path")
                         .attr("id", "airwayPath")
                         .attr("d", airwayPathD)
-                        .attr("stroke", "#FF9899") // Light blue color
+                        // .attr("stroke", "#FF9899") // Light blue color
                         .attr("stroke-width", 8)
                         .attr("fill", "none");
 
@@ -39,7 +39,7 @@ function initRespiratorySystem(svg) {
 // Function to add a new air particle (could be clean air or smoke)
 function addAirParticle(isSmoke) {
     var particle = { 
-        progress: 1,
+        progress: 0,
         isSmoke: isSmoke || false // Track if it's smoke or clean air
     };
     airParticles.push(particle);
@@ -71,7 +71,7 @@ function respiratorySimStep(isRunning, sticksPerDay) {
 function updateAirParticles(sticksPerDay) {
     // Move particles along the airway
     airParticles.forEach(function(particle) {
-        particle.progress -= baseAirParticleSpeed;
+        particle.progress += baseAirParticleSpeed;
     });
     
     // Remove particles that have reached lungs or been exhaled
