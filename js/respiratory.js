@@ -1,3 +1,4 @@
+import { getCurrentSticks } from "./script.js";
 // Respiratory system simulation for the smoker simulator
 var airwayPathD = "M270 90h-70v170l-100,107-17-28,52,58,2,-58";
 var airwayPath;
@@ -85,7 +86,7 @@ function updateAirParticles(sticksPerDay) {
     // Remove particles that have reached lungs or been exhaled
     airParticles = airParticles.filter(function(particle) {
         // If reached end of airway (lungs)
-        if (particle.progress <= 0) {
+        if (particle.progress >= 1) {
             // If it's smoke, accumulate damage
             if (particle.isSmoke) {
                 tarAccumulation += 0.0295 * sticksPerDay;
@@ -102,11 +103,19 @@ function updateAirParticles(sticksPerDay) {
 
 // Update lung health based on smoking habits
 function updateLungHealth() {
-    // Lung capacity decreases with tar accumulation
-    lungCapacity = 100 - (tarAccumulation)
-    // console.log("lung cap ",lungCapacity)
+    // Body naturally cleans lungs very slowly (when not smoking)
+    const currentSticks = getCurrentSticks(); // You'll need to ensure this function is accessible
     
-    // Tar accumulation increases with smoking, slight natural cleaning occurs
+    // Natural cleaning only happens when smoking is minimal
+    if (currentSticks < 3) {
+        // Very slow natural cleaning rate (0.01% per step when not smoking)
+        tarAccumulation = Math.max(0, tarAccumulation - 0.01);
+    }
+    
+    // Lung capacity decreases with tar accumulation
+    lungCapacity = 100 - tarAccumulation;
+    
+    // Cap tar accumulation at 100%
     tarAccumulation = Math.min(100, tarAccumulation);
 }
 

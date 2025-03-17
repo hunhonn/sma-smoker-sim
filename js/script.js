@@ -22,6 +22,7 @@ var heart_oxygen_level = 100;
 var heartStress = 0;
 // ==================== Parameter Initialization ====================
 var currentAge = 25;
+const baseLifeExpectancy = 83;
 var lifeExpectancy = 80;
 var ageProgressionRate = 0.1; // how much age increases per step
 var simulationYear = 0; // Years elapsed in simulation
@@ -73,6 +74,9 @@ function init() {
     document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
 
+    //For Graphs
+    initCharts();
+
     // Set up input event listeners
     document.getElementById("age").addEventListener("input", updateInitialAge);
     document.getElementById("sticks_a_day").addEventListener("input", function() {
@@ -116,6 +120,9 @@ function init() {
     updateHeartHealth();
 
     calculateLifeExpectancy(); //Calculate life expectancy
+    if(window.updateLifeExpectancyChart){
+        updateLifeExpectancyChart(simulationYear,lifeExpectancy);
+    }
 }
 
 // ==================== Human Body Characteristics Functions ====================
@@ -140,15 +147,39 @@ function updateRetirementAge() {
 // Function to calculate life expectancy based on smoking habits
 function calculateLifeExpectancy() {
     // Base life expectancy (for non-smokers)
-    const baseLifeExpectancy = 80;
+    
     
     // Each cigarette per day reduces life expectancy
     // Research shows heavy smoking (20+ cigarettes/day) can reduce life by 10+ years
     const currentSticks = getCurrentSticks();
-    const yearsReduced = currentSticks *(0.000456621/12); // Each stick reduces life by 20 minutes
-    // console.log("years reduced ",yearsReduced)
     
+    // Start with basic reduction: Each stick reduces life by 20 minutes
+    let yearsReduced = currentSticks * (20/525600);
+
+    // Additional reduction for smoking after age 40
+    if (currentAge > 40 && currentSticks > 0) {
+        const yearsSmokingAfter40 = Math.min(simulationYear, currentAge - 40);
+        if (yearsSmokingAfter40 > 0) {
+            // 0.25 years (3 months) per year smoking after 40
+            yearsReduced += yearsSmokingAfter40 * 0.25;
+        }
+    }
+    
+    // Cap reduction based on smoking intensity (10 years for pack-a-day)
+    const maxReduction = 10 * (currentSticks / 20); 
+    yearsReduced = Math.min(yearsReduced, maxReduction);
+    
+    // Calculate final life expectancy
     lifeExpectancy = baseLifeExpectancy - yearsReduced;
+    
+    // Set upper and lower bounds
+    // Upper bound: non-smokers could live up to 90
+    const upperBound = baseLifeExpectancy + 7;
+    // Lower bound: heavy smokers won't go below 60
+    const lowerBound = Math.max(60, currentAge);
+    
+    // Apply bounds
+    lifeExpectancy = Math.min(upperBound, Math.max(lowerBound, lifeExpectancy));
     
     return lifeExpectancy;
 }
@@ -162,11 +193,21 @@ function updateHeartHealth() {
     // Use the tracked value when simulation is running, otherwise use input value
     var sticksPerDay = isRunning ? currentSticksPerDay : 
                        parseFloat(document.getElementById("sticks_a_day").value) || 0;
+
+    const lungHealth = getLungHealth();
+    const lungCapacity = lungHealth ? lungHealth.capacity : 100;
     
     // Calculate blood pressure: 1.0 is normal, increases by 0.1 per stick
     bloodPressure = 1 + (sticksPerDay * 0.1);
+
+    const smokingImpact = sticksPerDay * 0.5;
+    const lungImpact = (100 - lungCapacity) * 0.5;
     
-    heart_oxygen_level = 100 - (sticksPerDay * 0.0005);
+    // Combined impact (weighted to prioritize lung capacity)
+    heart_oxygen_level = 100 - (smokingImpact * 0.4) - (lungImpact * 0.6);
+
+    // Ensure oxygen level stays within realistic bounds
+    heart_oxygen_level = Math.min(100, Math.max(70, heart_oxygen_level));
 
     // Calculate heart stress based on both oxygen level and blood pressure
     // Heart stress increases when oxygen is low and blood pressure is high
@@ -178,9 +219,9 @@ function updateHeartHealth() {
     // Using sigmoid function to create realistic risk curve
 
     if (currentAge <  50){
-        heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50)));
+        heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40)));
     } else {
-        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 45))),heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50))));
+        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 35))),heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40))));
     }
 
     
@@ -217,11 +258,12 @@ function updateHealthIndicators() {
                            "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
                            "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
                            "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
-                           "<p>Years of Life Lost: " + (80 - lifeExpectancy).toFixed(1) + "</p>";
+                           "<p>Years of Life Lost: " + (baseLifeExpectancy - lifeExpectancy).toFixed(1) + "</p>";
     }
     
     console.log("heartstress",heartStress);
     console.log("heart attack risk",heartAttackRisk);
+    // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
     if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk/50) {
     // if (Math.random() < heartAttackRisk/50) {
@@ -271,9 +313,27 @@ function updateSticksPerDay() {
     
     // Apply change to current sticks per day
     newSticksPerDay += netChange;
+
+    const maxSticks = getMaxCigarettesForAge(currentAge);
     
     // Ensure smoking doesn't go below zero
-    return Math.max(0, newSticksPerDay);
+    return Math.min(maxSticks,Math.max(0, newSticksPerDay));
+}
+
+function getMaxCigarettesForAge(age){
+    if(age<18){
+        return 2;
+    } else if (age < 25){
+        return 10;
+    }else if (age < 35){
+        return 15;
+    }else if (age < 45){
+        return 15;
+    }else if (age < 55){
+        return 16;
+    }else if (age >= 55){
+        return 14;
+    }
 }
 
 // ==================== Blood Cell Atributes ====================
@@ -340,6 +400,11 @@ function simStep() {
     currentSticksPerDay = updateSticksPerDay();
     // Update health metrics
     updateHeartHealth();
+        
+    // Update the life expectancy chart with new data
+    if (window.updateLifeExpectancyChart) {
+        updateLifeExpectancyChart(currentAge, lifeExpectancy);
+    }
     
     // Check if we've reached life expectancy
     if (currentAge >= lifeExpectancy) {
@@ -411,6 +476,21 @@ function resetSimulation() {
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
     currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
     currentAge = parseFloat(document.getElementById("age").value) || 25;
+    simulationYear = 0;
+
+    // Reset the chart data
+    if (window.DataViz) {
+        DataViz.resetData('lifeExpectancy');
+    }
+    
+    // Update displays
+    updateHeartHealth();
+    calculateLifeExpectancy();
+    
+    // Update the chart with initial values
+    if (window.updateLifeExpectancyChart) {
+        updateLifeExpectancyChart(currentAge, lifeExpectancy);
+    }
     
     // Update displays
     updateHeartHealth();
@@ -441,4 +521,11 @@ function openTab(evt, tabName) {
     
     // Add active class to the button that opened the tab
     evt.currentTarget.classList.add("active");
+}
+
+export {
+    getCurrentSticks,
+    startSimulation,
+    resetSimulation,
+    updateHeartHealth
 }
