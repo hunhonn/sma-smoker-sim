@@ -1,4 +1,5 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
+import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -30,8 +31,8 @@ var initialSticksPerDay = 0; // Store initial value
 var currentSticksPerDay;
 
 // ==================== Social Circle Initialization ====================
-var familyInfluence = 0;
-var lifeStressLevel = 0.3;
+// var familyInfluence = 0;
+// var lifeStressLevel = 0.3;
 
 // ==================== Brain Initialization ====================
 var addictionFactor = 0;
@@ -70,7 +71,6 @@ function init() {
     initRespiratorySystem(svg);
 
     // Initialize span values for sliders
-    document.getElementById("family-influence-value").textContent = document.getElementById("family-influence").value;
     document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
 
@@ -85,11 +85,9 @@ function init() {
     });
     document.getElementById("retirement_age").addEventListener("input", updateRetirementAge);
 
-    // Add event listeners for the sliders
-    document.getElementById("family-influence").addEventListener("input", function() {
-        familyInfluence = parseFloat(this.value);
-        updateSliderLabel(this, "family-influence-value");
-        // console.log("Family influence set to:", familyInfluence);
+    // event listener for checkbox
+    document.getElementById("family-influence").addEventListener("change", function () {
+        updateFamilyInfluence(this); // Pass the checkbox element
     });
     
     document.getElementById("govt-intervention").addEventListener("input", function() {
@@ -98,12 +96,15 @@ function init() {
     });
     
     document.getElementById("life-stress").addEventListener("input", function() {
-        lifeStressLevel = parseFloat(this.value);
-        updateSliderLabel(this, "life-stress-value")
+        updateLifeStressLevel(this);
         // console.log("Life stress level set to:", lifeStressLevel);
     });
     
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
+
+    document.getElementById("smoker-friends").addEventListener("change", function() {
+        updateSmokerFriends(this);
+    });
     
     // For tabs
     const tabButtons = document.getElementsByClassName("tab-button");
@@ -134,7 +135,29 @@ function updateInitialAge() {
 }
 
 function updateInitialSticks() {
-    initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    if (familyInfluence) {
+        // If family influence is present, calculate the probability of starting smoking
+        const age = parseFloat(document.getElementById("age").value) || 12;
+        const maxAge = 21;
+        const minProbability = 0.05; // 10% chance at age 12
+        const maxProbability = 0.7; // 90% chance at age 21
+
+        // Linearly increase probability with age
+        const probability = Math.min(
+            maxProbability,
+            minProbability + ((age - 12) / (maxAge - 12)) * (maxProbability - minProbability)
+        );
+
+        // Randomly decide if the person starts smoking
+        if (Math.random() < probability) {
+            initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0);
+        } else {
+            initialSticksPerDay = 0; // No smoking if the random chance fails
+        }
+    } else {
+        // If no family influence, smoking initiation is less likely
+        initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    }
     currentSticksPerDay = initialSticksPerDay;
     calculateLifeExpectancy();
 }
@@ -291,25 +314,33 @@ function updateSticksPerDay() {
     if (currentAge >= retirementAge) {
         // Gradually reduce stress after retirement (down to 50% of normal stress)
         stressMultiplier = Math.max(0.5, 1.0 - ((currentAge - 63) / 20));
+    } else if(currentAge < 21) {
+        stressMultiplier = 1
     } else {
         stressMultiplier = 1.0 + (simulationYear / 30); // Normal stress progression before retirement
     }
     
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = lifeStressLevel * 0.3 * stressMultiplier;
+    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier;
     
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
-    const familyEffect = familyInfluence * 0.2;
+    const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
     
     // 3. Government intervention (increases in effectiveness over time)
     const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
     
     // 4. Random life events (can be positive or negative)
-    const lifeEventImpact = (Math.random() - 0.5) * 0.2;
+    let lifeEventImpact;
+    if (currentAge > 21 ) {
+        lifeEventImpact = (Math.random() - 0.5) * 0.2;
+    } else {
+        lifeEventImpact = 0;
+    }
+    
     
     // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-    let netChange = stressFactor + familyEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
+    let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
     
     // Apply change to current sticks per day
     newSticksPerDay += netChange;
@@ -475,7 +506,7 @@ function resetSimulation() {
     svg.selectAll(".bloodCell").remove();
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
     currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
-    currentAge = parseFloat(document.getElementById("age").value) || 25;
+    currentAge = parseFloat(document.getElementById("age").value) || 12;
     simulationYear = 0;
 
     // Reset the chart data
@@ -527,5 +558,6 @@ export {
     getCurrentSticks,
     startSimulation,
     resetSimulation,
-    updateHeartHealth
+    updateHeartHealth,
+    updateSliderLabel
 }
