@@ -318,12 +318,31 @@ function updateHealthIndicators() {
     }
 }
 
-// Optional function to simulate a heart attack
 function triggerHeartAttack() {
-    stopSimulation();
-    document.getElementById("StartORPause").textContent = "Start";
-    alert("Heart attack occurred! The simulation has been stopped.");
-    resetSimulation();
+    const survivalProbability = 0.5; // 50% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Heart attack occurred! The patient survived.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 2; // Decrease life expectancy by 1 year
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the heart attack.");
+        } else {
+            alert("The patient continues smoking at the same rate. He refuses to change his habits.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        document.getElementById("StartORPause").textContent = "Start";
+        alert("Heart attack occurred! The patient did not survive.");
+        resetSimulation();
+    }
 }
 
 // Function to update number of cigs
