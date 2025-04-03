@@ -18,7 +18,6 @@ function updateSodiumLevel(value) {
 }
 
 export {
-    minSmokeAge,
     updateMinSmokeAge,
     updateSugarLevel,
     updateSodiumLevel

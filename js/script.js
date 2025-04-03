@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { minSmokeAge, updateMinSmokeAge, updateSugarLevel, updateSodiumLevel } from './national_policy.js';
+import { updateMinSmokeAge, updateSugarLevel, updateSodiumLevel } from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -31,6 +31,7 @@ var ageProgressionRate = 0.1; // how much age increases per step
 var simulationYear = 0; // Years elapsed in simulation
 var initialSticksPerDay = 0; // Store initial value
 var currentSticksPerDay;
+var startSmoking = false; // Flag to track if smoking starts
 
 // ==================== Social Circle Initialization ====================
 // var familyInfluence = 0;
@@ -159,9 +160,11 @@ function updateInitialAge() {
 }
 
 function updateInitialSticks() {
+    initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
     if (familyInfluence) {
         // If family influence is present, calculate the probability of starting smoking
         const age = parseFloat(document.getElementById("age").value) || 12;
+        const legalAge = parseFloat(document.getElementById("min-age").value) || 21;
         const maxAge = 21;
         const minProbability = 0.05; // 10% chance at age 12
         const maxProbability = 0.7; // 90% chance at age 21
@@ -169,12 +172,14 @@ function updateInitialSticks() {
         // Linearly increase probability with age
         const probability = Math.min(
             maxProbability,
-            minProbability + ((age - 12) / (maxAge - 12)) * (maxProbability - minProbability)
+            Math.max(0,minProbability + ((currentAge - age) / (maxAge - age)) * (maxProbability - minProbability) - Math.max(0,legalAge-currentAge)*0.2)
         );
-
+        console.log("Probability of starting smoking:", probability);
+        console.log("Age:", currentAge);
         // Randomly decide if the person starts smoking
         if (Math.random() < probability) {
             initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0);
+            startSmoking = true; // Set the flag to true if smoking starts
         } else {
             initialSticksPerDay = 0; // No smoking if the random chance fails
         }
@@ -430,13 +435,15 @@ function updateSticksPerDay() {
     } else {
         lifeEventImpact = 0;
     }
-
-
-    // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-    let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ cognitiveImpact;
     
-    // Apply change to current sticks per day
-    newSticksPerDay += netChange;
+    // Check if person started smoking
+    if (startSmoking || initialSticksPerDay > 0) {
+        // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
+        let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ cognitiveImpact; //need tweak life and cognitive 
+        // Apply change to current sticks per day
+        newSticksPerDay += netChange;
+    }
+    
 
     const maxSticks = getMaxCigarettesForAge(currentAge);
 
@@ -520,6 +527,12 @@ function simStep() {
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
 
+    // Update intial smoking
+    if (!startSmoking) {
+        // Check if the user has started smoking
+        updateInitialSticks();
+    }
+
     let previousSticks = currentSticksPerDay;
 
     // Update sticks per day based on progression
@@ -601,7 +614,7 @@ function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-        console.log("started sim with", currentSticksPerDay, "sticks per day");
+        // console.log("started sim with", currentSticksPerDay, "sticks per day");
         // Start the simulation
         simTimer = window.setInterval(simStep, animationDelay);
         isRunning = true;
@@ -692,5 +705,6 @@ export {
     startSimulation,
     resetSimulation,
     updateHeartHealth,
-    updateSliderLabel
+    updateSliderLabel,
+    startSmoking
 }
