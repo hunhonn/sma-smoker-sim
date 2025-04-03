@@ -38,6 +38,10 @@ var currentSticksPerDay;
 
 // ==================== Brain Initialization ====================
 var addictionFactor = 0;
+var withdrawal_severity =0;
+var neuroplasticity_recovery_potential=0;
+var cognitive_decline_risk=0;
+var cognitiveImpact=0;
 // ==================== Govt Intervention Initialization ====================
 var govtInterventionLevel = 0;
 
@@ -429,8 +433,13 @@ function updateSticksPerDay() {
 
 
     // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
+<<<<<<< Updated upstream
     let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
 
+=======
+    let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ cognitiveImpact;
+    
+>>>>>>> Stashed changes
     // Apply change to current sticks per day
     newSticksPerDay += netChange;
 
@@ -515,9 +524,38 @@ function simStep() {
     // Update simulation time and smoking habit
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
+<<<<<<< Updated upstream
+=======
+    
+    // == Withdrawal Severity ==
+    let previousSticks = currentSticksPerDay;
+>>>>>>> Stashed changes
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
+    const drop = previousSticks - currentSticksPerDay;
+    const exposure = currentSticksPerDay / 20;
+
+    // === Update Withdrawal Severity ===
+    if (previousSticks > 0 && currentSticksPerDay < previousSticks) {
+        // Withdrawal kicks in when there's a drop in consumption
+        withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor); // Scale based on drop and addiction
+        neuroplasticity_recovery_potential = Math.min(1, neuroplasticity_recovery_potential + 0.01);
+    } else if ( currentSticksPerDay > 0) {
+        const declineRate = 0.002 * (1.2 - neuroplasticity_recovery_potential); // more risk if recovery is low
+        cognitive_decline_risk = Math.min(1, cognitive_decline_risk + declineRate * exposure);
+        neuroplasticity_recovery_potential = Math.max(0.3, neuroplasticity_recovery_potential - 0.001 * exposure);// Brain recovery decreases
+        withdrawal_severity = Math.max(0, withdrawal_severity - 0.01);// If no reduction or still smoking, slowly ease withdrawal
+    }else {
+        // Fully quit: withdrawal easing and brain recovery
+        withdrawal_severity = Math.max(0, withdrawal_severity - 0.02);
+        neuroplasticity_recovery_potential = Math.min(1, neuroplasticity_recovery_potential + 0.02);
+        const healing = 0.005 * neuroplasticity_recovery_potential;
+        cognitive_decline_risk = Math.max(0, cognitive_decline_risk - healing);
+    }
+    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) - (neuroplasticity_recovery_potential * 0.005);
+    cognitiveImpact = Math.min(1, Math.max(0, cognitive_decline + cognitiveImpact));
+
     // Update health metrics
     updateHeartHealth();
 
