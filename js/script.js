@@ -524,6 +524,11 @@ function simStep() {
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
+
+    if (currentSticksPerDay > 0) {
+        updateCigaretteImage();
+    }
+
     const drop = previousSticks - currentSticksPerDay;
     const exposure = currentSticksPerDay / 20;
 
@@ -670,6 +675,16 @@ function openTab(evt, tabName) {
 
     // Add active class to the button that opened the tab
     evt.currentTarget.classList.add("active");
+}
+
+function updateCigaretteImage() {
+    const imageContainer = document.getElementById("cigarette-image");
+
+    if (parseFloat(currentSticksPerDay.toFixed(1)) > 0) {
+        imageContainer.innerHTML = `<img src="/public/img/cig.png" alt="Cigarette" style="width: 50px; height: auto;">`;
+    } else {
+        imageContainer.innerHTML = ""; // Clear the image if sticks per day is 0
+    }
 }
 
 export {
