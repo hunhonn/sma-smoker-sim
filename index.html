@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMA-Simulator</title>
-    <script type = "text/javascript" src = "js/d3.min.js"></script>
+    <script type="text/javascript" src="js/d3.min.js"></script>
     <link rel="stylesheet" href="./css/styles.css" media="screen">
-    
+
 </head>
+
 <body class="official bgColor0">
-	
-    <div id="game-platform" style="position: absolute; top: 0; left: 0; right: 0; bottom: 100px; padding: 20px; display: flex;">
+
+    <div id="game-platform"
+        style="position: absolute; top: 0; left: 0; right: 0; bottom: 100px; padding: 20px; display: flex;">
         <!-- The surface is the main playing field for the game -->
-        <div style="position: relative; width: 40vw; height: 100%; background-image: url('/public/img/Human_Body3.png'); background-size: cover;">
-            <svg 
-                id="bodySurface"
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent;" 
-                xmlns="http://www.w3.org/2000/svg" 
-                version="1.1">
+        <div
+            style="position: relative; width: 40vw; height: 100%; background-image: url('/public/img/Human_Body3.png'); background-size: cover;">
+            <svg id="bodySurface"
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent;"
+                xmlns="http://www.w3.org/2000/svg" version="1.1">
             </svg>
         </div>
-        
+
         <div id="parameters">
             <h3>Parameters</h3>
             Age: <input type="number" id="age" value="12" min="0" max="100" step="1"><br>
@@ -29,24 +31,40 @@
 
             <div class="control-panel">
                 <!-- <label for="family-influence">Family Influence: <span id="family-influence-value">0</span></label>
-                <input type="range" id="family-influence" min="-1" max="1" step="0.1" value="0">
-                <br> -->
-                
-                <label for="govt-intervention">Government Intervention:<span id="govt-intervention-value">0</span></label>
-                <input type="range" id="govt-intervention" min="0" max="1" step="0.1" value="0.5">
-                <br>
-                
-                <label for="life-stress">Life Stress Level:<span id="life-stress-value">0</span></label>
-                <input type="range" id="life-stress" min="0" max="1" step="0.1" value="0.3">
-                <br>
+                <input type="range" id="family-influence" min="-1" max="1" step="0.1" value="0"> -->
+                <hr>
+                <div class="govt-actions">
+                    <label for="min-age">Minimum Smoking Age: </label>
+                    <input type="number" id="min-age" value="21" min="0" max="100" step="1">
+                    <br>
 
-                <label for = "smoker-friends">Smoker Friends</label>
-                <input type = "checkbox" id = "smoker-friends">
-                <br>
+                    <label for="govt-intervention">Government Intervention: <span
+                            id="govt-intervention-value">0</span></label>
+                    <input type="range" id="govt-intervention" min="0" max="1" step="0.1" value="0.5">
+                    <br>
 
-                <label for="family-influence">Family Influence</label>
-                <input type="checkbox" id="family-influence" />
-                <br>
+                    <label for="reco-sugar">Recommended Sugar: <span id="reco-sugar-value">0</span></label>
+                    <input type="range" id="reco-sugar" min="0" max="1" step="0.1" value="0.5">
+                    <br>
+
+                    <label for="reco-sodium">Recommended Sodium: <span id="reco-sodium-value">0</span></label>
+                    <input type="range" id="reco-sodium" min="0" max="1" step="0.1" value="0.5">
+                    <br>
+                </div>
+                <hr>
+                <div class="lifestyle-actions">
+                    <label for="life-stress">Life Stress Level: <span id="life-stress-value">0</span></label>
+                    <input type="range" id="life-stress" min="0" max="1" step="0.1" value="0.3">
+                    <br>
+
+                    <label for="smoker-friends">Smoker Friends</label>
+                    <input type="checkbox" id="smoker-friends">
+                    <br>
+
+                    <label for="family-influence">Family Influence</label>
+                    <input type="checkbox" id="family-influence" />
+                </div>
+                <hr>
             </div>
         </div>
 
@@ -58,35 +76,37 @@
                     <button class="tab-button" data-tab="insights">Insights</button>
                 </div>
                 <div id="graphs" class="tab-content active">
-                     Graphs
+                    Graphs
                 </div>
                 <div id="insights" class="tab-content">
-                     Insights
+                    Insights
                 </div>
             </div>
-             <div id="status-table">
+            <div id="status-table">
 
-             </div>
+            </div>
         </div>
     </div>
-	
-	<div id="title"  style="position:absolute;
+
+    <div id="title" style="position:absolute;
                             bottom:0;
                             left:0;
-                            color:#FAFAFA">S.M.O.K.E.R<br>Smoking Mitigation Outreach for Knowledge and Education Research</div>
-	
-	<div id="controls" style="position:absolute;bottom:0;left:45%;color:#FAFAFA">Animation Speed:
-	<input id="slider1" type="range" min="0" value="275" max="1000" step="10" />
-    <button id="StartORPause" style="margin-left:1rem; vertical-align: middle;">Start/Pause</button> 
-	</div>
-	
-	<!-- <a id="credits" href="http://www.icons-land.com" style="position:absolute;bottom:0;right:0">Icons by icons-land.com</a> -->
-	
-	
-	
-	<!-- Anything below this line should be a popup window or dialog or a late-loading library -->
-	<script src="js/data_viz.js"></script>
-	<script type="module" src="js/script.js"></script>
-	
+                            color:#FAFAFA">S.M.O.K.E.R<br>Smoking Mitigation Outreach for Knowledge and Education
+        Research</div>
+
+    <div id="controls" style="position:absolute;bottom:0;left:45%;color:#FAFAFA">Animation Speed:
+        <input id="slider1" type="range" min="0" value="275" max="1000" step="10" />
+        <button id="StartORPause" style="margin-left:1rem; vertical-align: middle;">Start/Pause</button>
+    </div>
+
+    <!-- <a id="credits" href="http://www.icons-land.com" style="position:absolute;bottom:0;right:0">Icons by icons-land.com</a> -->
+
+
+
+    <!-- Anything below this line should be a popup window or dialog or a late-loading library -->
+    <script src="js/data_viz.js"></script>
+    <script type="module" src="js/script.js"></script>
+
 </body>
+
 </html>

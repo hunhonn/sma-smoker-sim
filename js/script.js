@@ -1,5 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
+import { minSmokeAge, updateMinSmokeAge, updateSugarLevel, updateSodiumLevel } from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -18,6 +19,7 @@ var speedSlider = document.getElementById("slider1");
 var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
+var strokeRisk = 0;
 var bloodPressure = 1;
 var heart_oxygen_level = 100;
 var heartStress = 0;
@@ -38,7 +40,9 @@ var currentSticksPerDay;
 var addictionFactor = 0;
 // ==================== Govt Intervention Initialization ====================
 var govtInterventionLevel = 0;
+
 var retirementAge = 63; //default
+
 // ==================== Initialization ====================
 
 window.addEventListener("load", init);
@@ -46,24 +50,24 @@ window.addEventListener("load", init);
 function init() {
     // Create the SVG drawing surface
     svg = d3.select("#bodySurface")
-            .attr("width", 600)
-            .attr("height", 300);
-    
+        .attr("width", 600)
+        .attr("height", 300);
+
     // Create a group for both path and blood cells
     var veinGroup = svg.append("g")
-                       .attr("transform", "translate(260, 220)");
-    
+        .attr("transform", "translate(260, 220)");
+
     // Append the path to the group
     bloodPath = veinGroup.append("path")
-                         .attr("id", "veinPath")
-                         .attr("d", veinPathD)
-                         .attr("stroke", "#BB2117")
-                         .attr("stroke-width", 10)
-                         .attr("fill", "none");
-    
+        .attr("id", "veinPath")
+        .attr("d", veinPathD)
+        .attr("stroke", "#BB2117")
+        .attr("stroke-width", 10)
+        .attr("fill", "none");
+
     // Store the group for later use when adding blood cells
     window.veinGroup = veinGroup;
-    
+
     // Get the DOM element to measure the length of the path
     pathElement = document.getElementById("veinPath");
     pathLength = pathElement.getTotalLength();
@@ -72,6 +76,8 @@ function init() {
 
     // Initialize span values for sliders
     document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
+    document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
+    document.getElementById("reco-sodium-value").textContent = document.getElementById("reco-sodium").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
 
     //For Graphs
@@ -79,37 +85,51 @@ function init() {
 
     // Set up input event listeners
     document.getElementById("age").addEventListener("input", updateInitialAge);
-    document.getElementById("sticks_a_day").addEventListener("input", function() {
+    document.getElementById("sticks_a_day").addEventListener("input", function () {
         updateInitialSticks();
         updateHeartHealth();
     });
     document.getElementById("retirement_age").addEventListener("input", updateRetirementAge);
+    document.getElementById("min-age").addEventListener("input", updateMinSmokeAge);
 
     // event listener for checkbox
     document.getElementById("family-influence").addEventListener("change", function () {
         updateFamilyInfluence(this); // Pass the checkbox element
     });
-    
-    document.getElementById("govt-intervention").addEventListener("input", function() {
+
+    document.getElementById("smoker-friends").addEventListener("change", function () {
+        updateSmokerFriends(this);
+    });
+
+    // event listener for sliders
+    document.getElementById("govt-intervention").addEventListener("input", function () {
         govtInterventionLevel = parseFloat(this.value);
         updateSliderLabel(this, "govt-intervention-value")
     });
-    
-    document.getElementById("life-stress").addEventListener("input", function() {
+
+    document.getElementById("reco-sugar").addEventListener("input", function () {
+        govtInterventionLevel = parseFloat(this.value);
+        updateSliderLabel(this, "reco-sugar-value")
+    });
+
+    document.getElementById("reco-sodium").addEventListener("input", function () {
+        govtInterventionLevel = parseFloat(this.value);
+        updateSliderLabel(this, "reco-sodium-value")
+    });
+
+    document.getElementById("life-stress").addEventListener("input", function () {
         updateLifeStressLevel(this);
         // console.log("Life stress level set to:", lifeStressLevel);
     });
-    
+
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
 
-    document.getElementById("smoker-friends").addEventListener("change", function() {
-        updateSmokerFriends(this);
-    });
-    
+
+
     // For tabs
     const tabButtons = document.getElementsByClassName("tab-button");
     for (let i = 0; i < tabButtons.length; i++) {
-        tabButtons[i].addEventListener("click", function(event) {
+        tabButtons[i].addEventListener("click", function (event) {
             const tabName = this.getAttribute("data-tab"); // You'll need to add this attribute
             openTab(event, tabName);
         });
@@ -121,8 +141,8 @@ function init() {
     updateHeartHealth();
 
     calculateLifeExpectancy(); //Calculate life expectancy
-    if(window.updateLifeExpectancyChart){
-        updateLifeExpectancyChart(simulationYear,lifeExpectancy);
+    if (window.updateLifeExpectancyChart) {
+        updateLifeExpectancyChart(simulationYear, lifeExpectancy);
     }
 }
 
@@ -170,14 +190,14 @@ function updateRetirementAge() {
 // Function to calculate life expectancy based on smoking habits
 function calculateLifeExpectancy() {
     // Base life expectancy (for non-smokers)
-    
-    
+
+
     // Each cigarette per day reduces life expectancy
     // Research shows heavy smoking (20+ cigarettes/day) can reduce life by 10+ years
     const currentSticks = getCurrentSticks();
-    
+
     // Start with basic reduction: Each stick reduces life by 20 minutes
-    let yearsReduced = currentSticks * (20/525600);
+    let yearsReduced = currentSticks * (20 / 525600);
 
     // Additional reduction for smoking after age 40
     if (currentAge > 40 && currentSticks > 0) {
@@ -187,23 +207,23 @@ function calculateLifeExpectancy() {
             yearsReduced += yearsSmokingAfter40 * 0.25;
         }
     }
-    
+
     // Cap reduction based on smoking intensity (10 years for pack-a-day)
-    const maxReduction = 10 * (currentSticks / 20); 
+    const maxReduction = 10 * (currentSticks / 20);
     yearsReduced = Math.min(yearsReduced, maxReduction);
-    
+
     // Calculate final life expectancy
     lifeExpectancy = baseLifeExpectancy - yearsReduced;
-    
+
     // Set upper and lower bounds
     // Upper bound: non-smokers could live up to 90
     const upperBound = baseLifeExpectancy + 7;
     // Lower bound: heavy smokers won't go below 60
     const lowerBound = Math.max(60, currentAge);
-    
+
     // Apply bounds
     lifeExpectancy = Math.min(upperBound, Math.max(lowerBound, lifeExpectancy));
-    
+
     return lifeExpectancy;
 }
 
@@ -214,18 +234,23 @@ function getCurrentSticks() {
 
 function updateHeartHealth() {
     // Use the tracked value when simulation is running, otherwise use input value
-    var sticksPerDay = isRunning ? currentSticksPerDay : 
-                       parseFloat(document.getElementById("sticks_a_day").value) || 0;
+    var sticksPerDay = isRunning ? currentSticksPerDay :
+        parseFloat(document.getElementById("sticks_a_day").value) || 0;
+
+    // Currently sugar intake = government recommended sugar intake
+    var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value);
 
     const lungHealth = getLungHealth();
     const lungCapacity = lungHealth ? lungHealth.capacity : 100;
-    
-    // Calculate blood pressure: 1.0 is normal, increases by 0.1 per stick
-    bloodPressure = 1 + (sticksPerDay * 0.1);
+
+    // Calculate blood pressure: 1.0 is normal
+    // Increases by 0.1 per cigarette stick
+    // Increases/decreases by sugar level (0.5 is normal)
+    bloodPressure = 1 + (sticksPerDay * 0.1) + (recoSugarLevel - 0.5);
 
     const smokingImpact = sticksPerDay * 0.5;
     const lungImpact = (100 - lungCapacity) * 0.5;
-    
+
     // Combined impact (weighted to prioritize lung capacity)
     heart_oxygen_level = 100 - (smokingImpact * 0.4) - (lungImpact * 0.6);
 
@@ -241,19 +266,30 @@ function updateHeartHealth() {
     // Calculate heart attack risk: 0-100%, increases non-linearly with sticks
     // Using sigmoid function to create realistic risk curve
 
-    if (currentAge <  50){
+    if (currentAge < 50) {
         heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40)));
     } else {
-        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 35))),heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40))));
+        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 35))), heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40))));
     }
 
-    
+    // Calculate stroke risk: 0-100%, increases with blood pressure
+    if (currentAge < 50) { 
+        strokeRisk = 1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)));
+    } else {
+        strokeRisk = Math.max(
+            1 / (1 + Math.exp(-0.07 * (bloodPressure - 1))),
+            1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)))
+        );
+    }
+
+
+
     // Adjust cell speed based on blood pressure
     cellSpeed = baseBloodCellSpeed * bloodPressure;
-    
+
     // Recalculate life expectancy
     calculateLifeExpectancy();
-    
+
     // Only update visuals if simulation is running
     if (isRunning) {
         updateHealthIndicators();
@@ -268,45 +304,98 @@ function updateHealthIndicators() {
     // .attr("stroke", d3.interpolateRgb("#BB2117", "#fe0204")(bloodPressure - 1));
 
     var lungHealth = getLungHealth();
-    
+
     // Display risk values in the insights panel
     var insights = document.getElementById("insights");
     if (insights) {
         insights.innerHTML = "<h3>Health Metrics</h3>" +
-                           "<p>Current Age: " + currentAge.toFixed(1) + "</p>" +
-                           "<p>Years Simulated: " + simulationYear.toFixed(1) + "</p>" +
-                           "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
-                           "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
-                           "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
-                           "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
-                           "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
-                           "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
-                           "<p>Years of Life Lost: " + (baseLifeExpectancy - lifeExpectancy).toFixed(1) + "</p>";
+            "<p>Current Age: " + currentAge.toFixed(1) + "</p>" +
+            "<p>Years Simulated: " + simulationYear.toFixed(1) + "</p>" +
+            "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
+            "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
+            "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
+            "<p>Stroke Risk: " + (strokeRisk * 100).toFixed(1) + "%</p>" +
+            "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
+            "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
+            "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
+            "<p>Years of Life Lost: " + (baseLifeExpectancy - lifeExpectancy).toFixed(1) + "</p>";
     }
-    
-    console.log("heartstress",heartStress);
-    console.log("heart attack risk",heartAttackRisk);
+
+    console.log("heartstress", heartStress);
+    console.log("heart attack risk", heartAttackRisk);
+    console.log("stroke risk", strokeRisk);
     // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
-    if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk/50) {
-    // if (Math.random() < heartAttackRisk/50) {
+    if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk / 50) {
+        // if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
+    }
+
+    // Random chance of stroke based on risk
+    if (strokeRisk > 0.7 && Math.random() < strokeRisk / 50) {
+        // if (Math.random() < strokeRisk/50) {
+        triggerStroke();
     }
 }
 
-// Optional function to simulate a heart attack
 function triggerHeartAttack() {
-    stopSimulation();
-    document.getElementById("StartORPause").textContent = "Start";
-    alert("Heart attack occurred! The simulation has been stopped.");
-    resetSimulation();
+    const survivalProbability = 0.5; // 50% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Heart attack occurred! The patient survived.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 2; // Decrease life expectancy by 1 year
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the heart attack.");
+        } else {
+            alert("The patient continues smoking at the same rate. He refuses to change his habits.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        document.getElementById("StartORPause").textContent = "Start";
+        alert("Heart attack occurred! The patient did not survive.");
+        resetSimulation();
+    }
+}
+
+function triggerStroke() {
+    const survivalProbability = 0.5; // 50% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Stroke occurred! The patient survived.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 2; // Decrease life expectancy by 2 years
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the stroke.");
+        } else {
+            alert("The patient continues smoking at the same rate.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        alert("Stroke occurred! The patient did not survive.");
+        resetSimulation();
+    }
 }
 
 // Function to update number of cigs
 function updateSticksPerDay() {
     // Base progression from initial habits
     let newSticksPerDay = currentSticksPerDay;
-    
+
     // Update addiction factor (makes it harder to quit the longer you smoke)
     addictionFactor = Math.min(1, addictionFactor + (0.01 * simulationYear * (currentSticksPerDay / 20)));
 
@@ -314,73 +403,73 @@ function updateSticksPerDay() {
     if (currentAge >= retirementAge) {
         // Gradually reduce stress after retirement (down to 50% of normal stress)
         stressMultiplier = Math.max(0.5, 1.0 - ((currentAge - 63) / 20));
-    } else if(currentAge < 21) {
+    } else if (currentAge < 21) {
         stressMultiplier = 1
     } else {
         stressMultiplier = 1.0 + (simulationYear / 30); // Normal stress progression before retirement
     }
-    
+
     // 1. Personal stress factor (increases with age and existing consumption)
     const stressFactor = lifeStressLevel * 0.1 * stressMultiplier;
-    
+
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
     const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
-    
+
     // 3. Government intervention (increases in effectiveness over time)
     const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
-    
+
     // 4. Random life events (can be positive or negative)
     let lifeEventImpact;
-    if (currentAge > 21 ) {
+    if (currentAge > 21) {
         lifeEventImpact = (Math.random() - 0.5) * 0.2;
     } else {
         lifeEventImpact = 0;
     }
-    
-    
+
+
     // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
     let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
-    
+
     // Apply change to current sticks per day
     newSticksPerDay += netChange;
 
     const maxSticks = getMaxCigarettesForAge(currentAge);
-    
+
     // Ensure smoking doesn't go below zero
-    return Math.min(maxSticks,Math.max(0, newSticksPerDay));
+    return Math.min(maxSticks, Math.max(0, newSticksPerDay));
 }
 
-function getMaxCigarettesForAge(age){
-    if(age<18){
+function getMaxCigarettesForAge(age) {
+    if (age < 18) {
         return 2;
-    } else if (age < 25){
+    } else if (age < 25) {
         return 10;
-    }else if (age < 35){
+    } else if (age < 35) {
         return 15;
-    }else if (age < 45){
+    } else if (age < 45) {
         return 15;
-    }else if (age < 55){
+    } else if (age < 55) {
         return 16;
-    }else if (age >= 55){
+    } else if (age >= 55) {
         return 14;
     }
 }
 
 // ==================== Blood Cell Atributes ====================
 
-function addDynamicBloodCell(){
+function addDynamicBloodCell() {
     var cell = { progress: 0 };
     bloodCells.push(cell);
 }
 
 // Update the progress of each blood cell along the path
-function updateBloodCells(){
-    bloodCells.forEach(function(cell) {
+function updateBloodCells() {
+    bloodCells.forEach(function (cell) {
         cell.progress += cellSpeed;
     });
     // Remove blood cells that have reached the end of the path
-    bloodCells = bloodCells.filter(function(cell) {
+    bloodCells = bloodCells.filter(function (cell) {
         return cell.progress < 1;
     });
 }
@@ -393,50 +482,50 @@ function updateSliderLabel(slider, labelId) {
 }
 
 // Update the positions of the red dots on the SVG drawing surface
-function updateSurface(){
+function updateSurface() {
     // Bind bloodCells data to circle elements
     var cells = veinGroup.selectAll(".bloodCell").data(bloodCells);
-    
+
     // Remove cells that are no longer in the data array
     cells.exit().remove();
-    
+
     // Add new circle elements for any new blood cells
     var newCells = cells.enter().append("circle")
-                         .attr("class", "bloodCell")
-                         .attr("r", 5)
-                         .attr("fill", "red");
-    
+        .attr("class", "bloodCell")
+        .attr("r", 5)
+        .attr("fill", "red");
+
     // Position all blood cells along the path based on their progress
     svg.selectAll(".bloodCell")
-       .attr("cx", function(d) {
-           var point = pathElement.getPointAtLength((d.progress * pathLength));
-           return point.x;
-       })
-       .attr("cy", function(d) {
-           var point = pathElement.getPointAtLength((d.progress * pathLength));
-           return point.y;
-       });
+        .attr("cx", function (d) {
+            var point = pathElement.getPointAtLength((d.progress * pathLength));
+            return point.x;
+        })
+        .attr("cy", function (d) {
+            var point = pathElement.getPointAtLength((d.progress * pathLength));
+            return point.y;
+        });
 }
 
 // The simulation step: possibly add a new cell, update all cells, and redraw them.
 // Modify the simStep function to update age and check for end condition
 function simStep() {
     if (!isRunning) return;
-    
+
     // Update simulation time and smoking habit
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
-    
+
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
     // Update health metrics
     updateHeartHealth();
-        
+
     // Update the life expectancy chart with new data
     if (window.updateLifeExpectancyChart) {
         updateLifeExpectancyChart(currentAge, lifeExpectancy);
     }
-    
+
     // Check if we've reached life expectancy
     if (currentAge >= lifeExpectancy) {
         endSimulation();
@@ -444,13 +533,13 @@ function simStep() {
     }
 
     respiratorySimStep(isRunning, currentSticksPerDay);
-    
+
     // Regular simulation steps
     var spawnProbability = 0.1 * bloodPressure;
     if (Math.random() < spawnProbability) {
         addDynamicBloodCell();
     }
-    
+
     updateBloodCells();
     updateSurface();
 }
@@ -461,15 +550,15 @@ function simStep() {
 function endSimulation() {
     stopSimulation();
     alert(`Simulation ended: Subject reached end of life expectancy at age ${currentAge.toFixed(1)}`);
-    
+
     // Display final insights
     var insights = document.getElementById("insights");
     if (insights) {
         insights.innerHTML += "<h3>SIMULATION ENDED</h3>" +
-                             "<p>Life expectancy reached.</p>" +
-                             "<p>Final age: " + currentAge.toFixed(1) + "</p>" +
-                             "<p>Years of life lost due to smoking: " + 
-                                (80 - lifeExpectancy).toFixed(1) + "</p>";
+            "<p>Life expectancy reached.</p>" +
+            "<p>Final age: " + currentAge.toFixed(1) + "</p>" +
+            "<p>Years of life lost due to smoking: " +
+            (80 - lifeExpectancy).toFixed(1) + "</p>";
     }
 }
 
@@ -483,7 +572,7 @@ function startSimulation() {
         simTimer = window.setInterval(simStep, animationDelay);
         isRunning = true;
         document.getElementById("StartORPause").textContent = "Pause";
-        
+
         // Update initial indicators now that simulation has started
         updateHealthIndicators();
     } else {
@@ -500,7 +589,7 @@ function resetSimulation() {
         isRunning = false;
         document.getElementById("StartORPause").textContent = "Start";
     }
-    
+
     // Reset simulation values
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
@@ -513,16 +602,16 @@ function resetSimulation() {
     if (window.DataViz) {
         DataViz.resetData('lifeExpectancy');
     }
-    
+
     // Update displays
     updateHeartHealth();
     calculateLifeExpectancy();
-    
+
     // Update the chart with initial values
     if (window.updateLifeExpectancyChart) {
         updateLifeExpectancyChart(currentAge, lifeExpectancy);
     }
-    
+
     // Update displays
     updateHeartHealth();
 }
@@ -540,16 +629,16 @@ function openTab(evt, tabName) {
     for (var i = 0; i < tabcontents.length; i++) {
         tabcontents[i].classList.remove("active");
     }
-    
+
     // Remove active class from all tab buttons
     var tablinks = document.getElementsByClassName("tab-button");
     for (var i = 0; i < tablinks.length; i++) {
         tablinks[i].classList.remove("active");
     }
-    
+
     // Show the specific tab content
     document.getElementById(tabName).classList.add("active");
-    
+
     // Add active class to the button that opened the tab
     evt.currentTarget.classList.add("active");
 }
