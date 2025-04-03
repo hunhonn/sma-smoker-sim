@@ -433,13 +433,8 @@ function updateSticksPerDay() {
 
 
     // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-<<<<<<< Updated upstream
-    let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact;
-
-=======
     let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ cognitiveImpact;
     
->>>>>>> Stashed changes
     // Apply change to current sticks per day
     newSticksPerDay += netChange;
 
@@ -524,12 +519,8 @@ function simStep() {
     // Update simulation time and smoking habit
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
-<<<<<<< Updated upstream
-=======
-    
-    // == Withdrawal Severity ==
+
     let previousSticks = currentSticksPerDay;
->>>>>>> Stashed changes
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
