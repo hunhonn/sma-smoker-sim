@@ -19,6 +19,7 @@ var speedSlider = document.getElementById("slider1");
 var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
+var strokeRisk = 0;
 var bloodPressure = 1;
 var heart_oxygen_level = 100;
 var heartStress = 0;
@@ -271,6 +272,17 @@ function updateHeartHealth() {
         Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 35))), heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40))));
     }
 
+    // Calculate stroke risk: 0-100%, increases with blood pressure
+    if (currentAge < 50) { 
+        strokeRisk = 1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)));
+    } else {
+        strokeRisk = Math.max(
+            1 / (1 + Math.exp(-0.07 * (bloodPressure - 1))),
+            1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)))
+        );
+    }
+
+
 
     // Adjust cell speed based on blood pressure
     cellSpeed = baseBloodCellSpeed * bloodPressure;
@@ -302,6 +314,7 @@ function updateHealthIndicators() {
             "<p>Cigarettes/Day: " + currentSticksPerDay.toFixed(1) + "</p>" +
             "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
             "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
+            "<p>Stroke Risk: " + (strokeRisk * 100).toFixed(1) + "%</p>" +
             "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
             "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
             "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
@@ -310,20 +323,72 @@ function updateHealthIndicators() {
 
     console.log("heartstress", heartStress);
     console.log("heart attack risk", heartAttackRisk);
+    console.log("stroke risk", strokeRisk);
     // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
     if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk / 50) {
         // if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
+
+    // Random chance of stroke based on risk
+    if (strokeRisk > 0.7 && Math.random() < strokeRisk / 50) {
+        // if (Math.random() < strokeRisk/50) {
+        triggerStroke();
+    }
 }
 
-// Optional function to simulate a heart attack
 function triggerHeartAttack() {
-    stopSimulation();
-    document.getElementById("StartORPause").textContent = "Start";
-    alert("Heart attack occurred! The simulation has been stopped.");
-    resetSimulation();
+    const survivalProbability = 0.5; // 50% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Heart attack occurred! The patient survived.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 2; // Decrease life expectancy by 1 year
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the heart attack.");
+        } else {
+            alert("The patient continues smoking at the same rate. He refuses to change his habits.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        document.getElementById("StartORPause").textContent = "Start";
+        alert("Heart attack occurred! The patient did not survive.");
+        resetSimulation();
+    }
+}
+
+function triggerStroke() {
+    const survivalProbability = 0.5; // 50% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Stroke occurred! The patient survived.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 2; // Decrease life expectancy by 2 years
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the stroke.");
+        } else {
+            alert("The patient continues smoking at the same rate.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        alert("Stroke occurred! The patient did not survive.");
+        resetSimulation();
+    }
 }
 
 // Function to update number of cigs
