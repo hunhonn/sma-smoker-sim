@@ -527,6 +527,8 @@ function simStep() {
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
 
+    document.getElementById("age-value").textContent = currentAge.toFixed(0)
+
     // Update intial smoking
     if (!startSmoking) {
         // Check if the user has started smoking
@@ -641,7 +643,7 @@ function resetSimulation() {
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-    currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
+    currentSticksPerDay = SticksPerDay; // Reset current sticks to initial value
     currentAge = parseFloat(document.getElementById("age").value) || 12;
     simulationYear = 0;
 
