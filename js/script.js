@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { updateMinSmokeAge, updateSugarLevel, updateSodiumLevel, updateOilLevel} from './national_policy.js';
+import { updateMinSmokeAge, updateSugarLevel, updateOilLevel} from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
