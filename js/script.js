@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { updateMinSmokeAge, updateSugarLevel } from './national_policy.js';
+import { updateMinSmokeAge, updateSugarLevel, updateSodiumLevel, updateOilLevel} from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -20,6 +20,7 @@ var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
 var strokeRisk = 0;
+var cancerRisk = 0;
 var bloodPressure = 1;
 var heart_oxygen_level = 100;
 var heartStress = 0;
@@ -242,6 +243,8 @@ function updateHeartHealth() {
 
     // Currently sugar intake = government recommended sugar intake
     var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value);
+    var recoOilLevel = parseFloat(document.getElementById("reco-oil").value);
+    var cholesterol = 0;
 
     const lungHealth = getLungHealth();
     const lungCapacity = lungHealth ? lungHealth.capacity : 100;
@@ -249,7 +252,8 @@ function updateHeartHealth() {
     // Calculate blood pressure: 1.0 is normal
     // Increases by 0.1 per cigarette stick
     // Increases/decreases by sugar level (0.5 is normal)
-    bloodPressure = 1 + (sticksPerDay * 0.1) + (recoSugarLevel - 0.5);
+    cholesterol = recoOilLevel * 0.1; // Assuming oil level is a proxy for cholesterol
+    bloodPressure = 1 + (sticksPerDay * 0.1) + (recoSugarLevel - 0.5) + (cholesterol - 0.5);
 
     const smokingImpact = sticksPerDay * 0.5;
     const lungImpact = (100 - lungCapacity) * 0.5;
@@ -285,7 +289,15 @@ function updateHeartHealth() {
         );
     }
 
-
+    // Calculate stroke risk: 0-100%, increases with blood pressure
+    if (currentAge < 50) { 
+        cancerRisk = 1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)));
+    } else {
+        cancerRisk = Math.max(
+            1 / (1 + Math.exp(-0.07 * (bloodPressure - 1))),
+            1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)))
+        );
+    }
 
     // Adjust cell speed based on blood pressure
     cellSpeed = baseBloodCellSpeed * bloodPressure;
@@ -327,6 +339,7 @@ function updateHealthIndicators() {
     console.log("heartstress", heartStress);
     console.log("heart attack risk", heartAttackRisk);
     console.log("stroke risk", strokeRisk);
+    console.log("cancer risk", cancerRisk);
     // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
     if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk / 50) {
@@ -338,6 +351,11 @@ function updateHealthIndicators() {
     if (strokeRisk > 0.7 && Math.random() < strokeRisk / 50) {
         // if (Math.random() < strokeRisk/50) {
         triggerStroke();
+    }
+
+    if (cancerRisk > 0.7 && Math.random() < cancerRisk / 50) {
+        // if (Math.random() < cancerRisk/50) {
+        triggerCancer();
     }
 }
 
@@ -390,6 +408,32 @@ function triggerStroke() {
     } else {
         stopSimulation();
         alert("Stroke occurred! The patient did not survive.");
+        resetSimulation();
+    }
+}
+
+function triggerCancer() {
+    const survivalProbability = 0.95; // 95% chance to survive
+    if (Math.random() < survivalProbability) {
+        alert("Patient has been diagnosed with Stage 1 cancer.");
+
+        // Reduce life expectancy slightly
+        lifeExpectancy -= 5; // Decrease life expectancy by 5 years
+
+        // Chance to reduce sticks per day to 1
+        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+            currentSticksPerDay = 1;
+            alert("The patient has drastically reduced smoking to 1 stick per day after the cancer diagnosis.");
+        } else {
+            alert("The patient continues smoking at the same rate.");
+        }
+
+        // Update health metrics and indicators
+        updateHeartHealth();
+        updateHealthIndicators();
+    } else {
+        stopSimulation();
+        alert("Patient has been diagnosed with Stage 4 cancer. The patient passed away soon after.");
         resetSimulation();
     }
 }
