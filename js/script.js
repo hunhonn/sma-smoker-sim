@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { updateMinSmokeAge, updateSugarLevel, updateSodiumLevel } from './national_policy.js';
+import { updateMinSmokeAge, updateSugarLevel } from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -82,7 +82,6 @@ function init() {
     // Initialize span values for sliders
     document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
-    document.getElementById("reco-sodium-value").textContent = document.getElementById("reco-sodium").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
 
     //For Graphs
@@ -115,11 +114,6 @@ function init() {
     document.getElementById("reco-sugar").addEventListener("input", function () {
         govtInterventionLevel = parseFloat(this.value);
         updateSliderLabel(this, "reco-sugar-value")
-    });
-
-    document.getElementById("reco-sodium").addEventListener("input", function () {
-        govtInterventionLevel = parseFloat(this.value);
-        updateSliderLabel(this, "reco-sodium-value")
     });
 
     document.getElementById("life-stress").addEventListener("input", function () {
