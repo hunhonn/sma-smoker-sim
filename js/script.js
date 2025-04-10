@@ -377,7 +377,7 @@ function triggerStroke() {
         lifeExpectancy -= 2; // Decrease life expectancy by 2 years
 
         // Chance to reduce sticks per day to 1
-        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+        if (cognitiveImpact < 0.7 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
             currentSticksPerDay = 1;
             alert("The patient has drastically reduced smoking to 1 stick per day after the stroke.");
         } else {
@@ -433,7 +433,7 @@ function updateSticksPerDay() {
     // Check if person started smoking
     if (startSmoking || initialSticksPerDay > 0) {
         // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-        let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ cognitiveImpact; //need tweak life and cognitive 
+        let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ withdrawal_severity; //need tweak life and cognitive 
         // Apply change to current sticks per day
         newSticksPerDay += netChange;
     }
