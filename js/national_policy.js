@@ -12,13 +12,7 @@ function updateSugarLevel(value) {
     updateSliderLabel(value, "reco-sugar-value");
 }
 
-function updateSodiumLevel(value) {
-    sodiumLevel = parseFloat(value);
-    updateSliderLabel(value, "reco-sodium-value");
-}
-
 export {
     updateMinSmokeAge,
-    updateSugarLevel,
-    updateSodiumLevel
+    updateSugarLevel
 };
