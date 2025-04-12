@@ -1,6 +1,7 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
 import { updateMinSmokeAge, updateSugarLevel, updateOilLevel} from './national_policy.js';
+import { updateTaxLevel } from "./national_policy.js";
 
 var animationDelay = 100;
 var simTimer;
@@ -81,7 +82,7 @@ function init() {
     initRespiratorySystem(svg);
 
     // Initialize span values for sliders
-    document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
+    // document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
 
@@ -107,9 +108,13 @@ function init() {
     });
 
     // event listener for sliders
-    document.getElementById("govt-intervention").addEventListener("input", function () {
-        govtInterventionLevel = parseFloat(this.value);
-        updateSliderLabel(this, "govt-intervention-value")
+    // document.getElementById("govt-intervention").addEventListener("input", function () {
+    //     govtInterventionLevel = parseFloat(this.value);
+    //     updateSliderLabel(this, "govt-intervention-value")
+    // });
+
+    document.getElementById("tax-slider").addEventListener("input", function () {
+        updateTaxLevel(this); // Dynamically update sticks per day
     });
 
     document.getElementById("reco-sugar").addEventListener("input", function () {
