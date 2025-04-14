@@ -10,8 +10,9 @@ function updateFamilyInfluence(checkbox) {
 }
 
 function updateLifeStressLevel(value) {
-    lifeStressLevel = parseFloat(value);
+    lifeStressLevel = parseFloat(value.value);
     updateSliderLabel(value, "life-stress-value");
+    console.log("Updating lifeStressLevel to:", lifeStressLevel);
 }
 
 function updateSmokerFriends(checkbox) {

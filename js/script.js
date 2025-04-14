@@ -47,6 +47,7 @@ var cognitive_decline_risk=0;
 var cognitiveImpact=0;
 // ==================== Govt Intervention Initialization ====================
 var govtInterventionLevel = 0;
+var adjustedConsumptionFactor = 1; // Default to 1 (no adjustment)
 
 var retirementAge = 63; //default
 
@@ -469,8 +470,8 @@ function updateSticksPerDay() {
     const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
     // 3. Government intervention (increases in effectiveness over time)
-    const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
-
+    // const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
+    const govtEffect = 1
     // 4. Random life events (can be positive or negative)
     let lifeEventImpact;
     if (currentAge > 21) {
@@ -489,6 +490,9 @@ function updateSticksPerDay() {
     
 
     const maxSticks = getMaxCigarettesForAge(currentAge);
+    console.log("lifeStressLevel:", lifeStressLevel);
+    console.log("stressMultiplier:", stressMultiplier);
+    console.log("Stress Factor:", stressFactor);
 
     // Ensure smoking doesn't go below zero
     return Math.min(maxSticks, Math.max(0, newSticksPerDay));
@@ -572,9 +576,8 @@ function simStep() {
 
     document.getElementById("age-value").textContent = currentAge.toFixed(0)
 
-    // Update intial smoking
+    // Check if the user has started smoking
     if (!startSmoking) {
-        // Check if the user has started smoking
         updateInitialSticks();
     }
 
@@ -582,6 +585,8 @@ function simStep() {
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
+
+    currentSticksPerDay *= adjustedConsumptionFactor;
 
     if (currentSticksPerDay > 0) {
         updateCigaretteImage();
@@ -632,6 +637,13 @@ function simStep() {
         addDynamicBloodCell();
     }
 
+    console.log("Simulation Year:", simulationYear);
+    console.log("Current Age:", currentAge);
+    console.log("Previous Sticks Per Day:", previousSticks);
+    console.log("Updated Sticks Per Day (before adjustment):", currentSticksPerDay);
+    console.log("Adjusted Consumption Factor:", adjustedConsumptionFactor);
+    console.log("Updated Sticks Per Day (after adjustment):", currentSticksPerDay);
+
     updateBloodCells();
     updateSurface();
 }
@@ -658,6 +670,9 @@ function endSimulation() {
 function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        const taxSlider = document.getElementById("tax-slider");
+        adjustedConsumptionFactor = updateTaxLevel(taxSlider); // Store the factor
+
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         // console.log("started sim with", currentSticksPerDay, "sticks per day");
         // Start the simulation
