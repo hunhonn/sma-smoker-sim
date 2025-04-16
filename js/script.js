@@ -51,8 +51,9 @@ var cognitiveImpact=0;
 var recoSugarLevel = 0; // -1 to 1
 var recoOilLevel = 0; // -1 to 1
 var adjustedConsumptionFactor = 1; // Default to 1 (no adjustment)
+var nicotineContent = 6;
 
-var retirementAge = 63; //default
+var retirementAge = 63;
 
 // ==================== Initialization ====================
 
@@ -90,6 +91,7 @@ function init() {
     document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
     document.getElementById("tax-value").textContent = document.getElementById("tax-slider").value;
+    document.getElementById("nicotine-content-value").textContent = document.getElementById("nicotine-content-slider").value;
     
     //For Graphs
     initCharts();
@@ -153,6 +155,11 @@ function init() {
 
     document.getElementById("tax-slider").addEventListener("input", function () {
         updateSliderLabel(this, "tax-value");
+    });
+
+    document.getElementById("nicotine-content-slider").addEventListener("input", function () {
+        nicotineContent = this.value;
+        updateSliderLabel(this, "nicotine-content-value");
     });
 
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
@@ -497,10 +504,7 @@ function updateSticksPerDay() {
     // Negative values decrease smoking, positive values increase
     const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
-    // 3. Government intervention (increases in effectiveness over time)
-    // const govtEffect = -govtInterventionLevel * 0.1 * (1 + (simulationYear / 10));
-    const govtEffect = 1
-    // 4. Random life events (can be positive or negative)
+    // 3. Random life events (can be positive or negative)
     let lifeEventImpact;
     if (currentAge > 21) {
         lifeEventImpact = (Math.random() - 0.5) * 0.2;
@@ -511,7 +515,7 @@ function updateSticksPerDay() {
     // Check if person started smoking
     if (startSmoking || initialSticksPerDay > 0) {
         // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-        let netChange = stressFactor + influenceEffect + (govtEffect * (1 - addictionFactor)) + lifeEventImpact+ withdrawal_severity; //need tweak life and cognitive 
+        let netChange = stressFactor + influenceEffect + lifeEventImpact+ withdrawal_severity; //need tweak life and cognitive 
         // Apply change to current sticks per day
         newSticksPerDay += netChange;
     }

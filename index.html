@@ -30,7 +30,7 @@
         <div id="parameters">
             <h3>Parameters</h3>
             Age: <input type="number" id="age" value="12" min="0" max="100" step="1" disabled style="background-color: #e0e0e0; color: #6c757d;"><br>
-            Sticks a day: <input type="number" id="sticks_a_day" value="0" min="0" max="10" step="1"><br>
+            Sticks a day: <input type="number" id="sticks_a_day" value="0" min="0" max="10" step="1" disabled style="background-color: #e0e0e0; color: #6c757d;"><br>
             Retirement Age: <input type="number" id="retirement_age" value="63" min="50" max="80" step="1"><br>
 
             <div class="control-panel">
@@ -50,12 +50,20 @@
                     <input type="checkbox" id="reco-exercise">
                     <br>
 
+                    <label for="nicotine-content-slider">Nicotine Content: <span id="nicotine-content-value">6</span>mg</label>
+                    <input type="range" id="nicotine-content-slider" min="6" max="24" step="3" value="6">
+                    <br>
+
                     <label for="reco-sugar">Recommended Sugar: <span id="reco-sugar-value">0</span></label>
                     <input type="range" id="reco-sugar" min="-1" max="1" step="0.1" value="0">
                     <br>
 
                     <label for ="reco-oil">Recommended Oil: <span id ="reco-oil-value">0   </span></label>
                     <input type="range" id="reco-oil" min="-1" max="1" step="0.1" value="0">
+                    <br>
+
+                    <label for="public-smoking">Public Smoking Ban</label>
+                    <input type="checkbox" id="public-smoking">
                     <br>
                 </div>
                 <hr>
@@ -66,10 +74,6 @@
 
                     <label for="smoker-friends">Smoker Friends</label>
                     <input type="checkbox" id="smoker-friends">
-                    <br>
-
-                    <label for="public-smoking">Public Smoking Ban</label>
-                    <input type="checkbox" id="public-smoking">
                     <br>
 
                     <label for="family-influence">Family Influence</label>
