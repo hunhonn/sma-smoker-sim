@@ -1,6 +1,7 @@
-import { updateSliderLabel } from "./script.js";
+import { updateSliderLabel, simulationYear } from "./script.js";
 
 var minSmokeAge = 21; // Default minimum smoking age
+var publicSmokingMultiplier = 1;
 
 const C0 = 100;
 const elasticity = -0.5; 
@@ -32,9 +33,24 @@ function updateOilLevel(value) {
     updateSliderLabel(value, "reco-oil-value");
 }
 
+function updatePublicSmokingBan(checkbox) {
+    if (checkbox.checked) {
+        const tolerance = 1e-6; // Small tolerance for floating-point comparison
+        if (Math.abs(simulationYear % 5) < tolerance) {
+            publicSmokingMultiplier -= 0.07;
+            publicSmokingMultiplier = Math.max(0, publicSmokingMultiplier);
+        }
+    } else {
+        publicSmokingMultiplier = 1;
+    }
+    console.log("Public smoking ban multiplier set to:", publicSmokingMultiplier);
+}
+
 export {
     updateMinSmokeAge,
     updateSugarLevel,
     updateOilLevel,
-    updateTaxLevel
+    updateTaxLevel,
+    updatePublicSmokingBan,
+    publicSmokingMultiplier
 };

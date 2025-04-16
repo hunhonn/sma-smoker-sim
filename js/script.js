@@ -1,7 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { updateMinSmokeAge, updateSugarLevel, updateOilLevel} from './national_policy.js';
-import { updateTaxLevel } from "./national_policy.js";
+import { updateMinSmokeAge, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier} from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -86,7 +85,8 @@ function init() {
     // document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
-
+    document.getElementById("tax-value").textContent = document.getElementById("tax-slider").value;
+    
     //For Graphs
     initCharts();
 
@@ -108,6 +108,10 @@ function init() {
         updateSmokerFriends(this);
     });
 
+    document.getElementById("public-smoking").addEventListener("change", function () {
+        updatePublicSmokingBan(this);
+    });
+
     // event listener for sliders
     // document.getElementById("govt-intervention").addEventListener("input", function () {
     //     govtInterventionLevel = parseFloat(this.value);
@@ -115,6 +119,7 @@ function init() {
     // });
 
     document.getElementById("tax-slider").addEventListener("input", function () {
+        adjustedConsumptionFactor = updateTaxLevel(this); // Store the factor
         updateTaxLevel(this); // Dynamically update sticks per day
     });
 
@@ -126,6 +131,10 @@ function init() {
     document.getElementById("life-stress").addEventListener("input", function () {
         updateLifeStressLevel(this);
         // console.log("Life stress level set to:", lifeStressLevel);
+    });
+
+    document.getElementById("tax-slider").addEventListener("input", function () {
+        updateSliderLabel(this, "tax-value");
     });
 
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
@@ -574,7 +583,9 @@ function simStep() {
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
 
-    document.getElementById("age-value").textContent = currentAge.toFixed(0)
+    document.getElementById("age-value").textContent = currentAge.toFixed(0);
+
+    updatePublicSmokingBan(document.getElementById("public-smoking"));
 
     // Check if the user has started smoking
     if (!startSmoking) {
@@ -587,6 +598,7 @@ function simStep() {
     currentSticksPerDay = updateSticksPerDay();
 
     currentSticksPerDay *= adjustedConsumptionFactor;
+    currentSticksPerDay *= publicSmokingMultiplier;
 
     if (currentSticksPerDay > 0) {
         updateCigaretteImage();
@@ -670,8 +682,6 @@ function endSimulation() {
 function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-        const taxSlider = document.getElementById("tax-slider");
-        adjustedConsumptionFactor = updateTaxLevel(taxSlider); // Store the factor
 
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         // console.log("started sim with", currentSticksPerDay, "sticks per day");
@@ -766,5 +776,6 @@ export {
     resetSimulation,
     updateHeartHealth,
     updateSliderLabel,
-    startSmoking
+    startSmoking,
+    simulationYear
 }
