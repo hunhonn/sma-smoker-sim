@@ -22,11 +22,14 @@ function updateMinSmokeAge() {
     console.log("Minimum smoking age set to: ", retirementAge);
 }
 
+function updateExerciseLevel(checkbox) {
+    exerciseLevel = checkbox.checked;
+}
+
 function updateSugarLevel(value) {
     sugarLevel = parseFloat(value);
     updateSliderLabel(value, "reco-sugar-value");
 }
-
 
 function updateOilLevel(value) {
     oilLevel = parseFloat(value);
@@ -48,6 +51,7 @@ function updatePublicSmokingBan(checkbox) {
 
 export {
     updateMinSmokeAge,
+    updateExerciseLevel,
     updateSugarLevel,
     updateOilLevel,
     updateTaxLevel,
