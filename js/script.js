@@ -43,11 +43,10 @@ var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
 // var lifeStressLevel = 0.3;
 
 // ==================== Brain Initialization ====================
-var addictionFactor = 0;
-var withdrawal_severity =0;
-var neuroplasticity_recovery_potential=0;
-var cognitive_decline_risk=0;
-var cognitiveImpact=0;
+var addictionFactor = 0; // 0 - 480 mg
+var withdrawal_severity =0; // 0 to 1
+var cognitive_decline = 0;  // 0 to 1
+var Neuroplasticity=0; // 0 to 1
 // ==================== Govt Intervention Initialization ====================
 var recoSugarLevel = 0; // -1 to 1
 var recoOilLevel = 0; // -1 to 1
@@ -444,7 +443,7 @@ function triggerStroke() {
         lifeExpectancy -= 2; // Decrease life expectancy by 2 years
 
         // Chance to reduce sticks per day to 1
-        if (cognitiveImpact < 0.7 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
+        if (Neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
             currentSticksPerDay = 1;
             alert("The patient has drastically reduced smoking to 1 stick per day after the stroke.");
         } else {
@@ -463,7 +462,7 @@ function triggerStroke() {
 function cogDeclineByAge(age) {
     // Constants for the logistic growth model
     const r = 0.1;  // Growth rate (adjust this for faster or slower increase)
-    const t0 = 35;  // Inflection point (age at which cognitive decline starts increasing)
+    const t0 = 30;  // Inflection point (age at which cognitive decline starts increasing)
     return 1 / (1 + Math.exp(-r * (age - t0)));
 }
 function triggerCancer() {
@@ -511,7 +510,7 @@ function updateSticksPerDay() {
     }
 
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier - recoSugarLevel * 0.01;
+    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier - recoSugarLevel * 0.01 + withdrawal_severity*10;
 
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
@@ -528,7 +527,7 @@ function updateSticksPerDay() {
     // Check if person started smoking
     if (startSmoking || initialSticksPerDay > 0) {
         // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
-        let netChange = stressFactor + influenceEffect + lifeEventImpact+ withdrawal_severity; //need tweak life and cognitive 
+        let netChange = stressFactor + influenceEffect + lifeEventImpact; //need tweak life and cognitive 
         // Apply change to current sticks per day
         newSticksPerDay += netChange;
     }
@@ -642,29 +641,26 @@ function simStep() {
 
     // cognitive decline because of age
     const cognitiveDeclineByAge = cogDeclineByAge(currentAge)
-
     const drop = previousSticks - currentSticksPerDay;
-    const exposure = currentSticksPerDay / 20;
 
     // === Update Withdrawal Severity ===
     if (previousSticks > 0 && currentSticksPerDay < previousSticks) {
         // Withdrawal kicks in when there's a drop in consumption
         withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor); // Scale based on drop and addiction
-        neuroplasticity_recovery_potential = Math.min(1, neuroplasticity_recovery_potential + 0.01);
+        const recoveryBoost = (drop / previousSticks) * 0.05; // scale down recovery rate
+        cognitive_decline = Math.max(0, cognitive_decline - recoveryBoost);
     } else if ( currentSticksPerDay > 0) {
-        const declineRate = 0.002 * (1.2 - neuroplasticity_recovery_potential); // more risk if recovery is low
-        cognitive_decline_risk = Math.min(1, cognitive_decline_risk + declineRate * exposure);
-        neuroplasticity_recovery_potential = Math.max(0.3, neuroplasticity_recovery_potential - 0.001 * exposure);// Brain recovery decreases
+        const declineRate = 0.002 * currentSticksPerDay; // More sticks per day = faster decline
         withdrawal_severity = Math.max(0, withdrawal_severity - 0.01);// If no reduction or still smoking, slowly ease withdrawal
+        cognitive_decline = Math.min(1, cognitive_decline + declineRate); // Small passive increase in decline due to continued smoking
     }else {
         // Fully quit: withdrawal easing and brain recovery
         withdrawal_severity = Math.max(0, withdrawal_severity - 0.02);
-        neuroplasticity_recovery_potential = Math.min(1, neuroplasticity_recovery_potential + 0.02);
-        const healing = 0.005 * neuroplasticity_recovery_potential;
-        cognitive_decline_risk = Math.max(0, cognitive_decline_risk - healing);
+        cognitive_decline = Math.max(0, cognitive_decline - 0.005); // Recovery phase: reduce cognitive decline slowly
     }
-    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) + cognitiveDeclineByAge - (neuroplasticity_recovery_potential * 0.005) - exercise * 0.01;
-    cognitiveImpact = Math.min(1, Math.max(0, cognitive_decline + cognitiveImpact));
+
+    Neuroplasticity = Math.max(0, cognitive_decline*0.5 + cognitiveDeclineByAge*0.5 - exercise/70);
+   
 
     // Update health metrics
     updateHeartHealth();
