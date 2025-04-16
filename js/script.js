@@ -36,6 +36,7 @@ var startSmoking = false; // Flag to track if smoking starts
 
 var exerciseFrequency = 3.75; // Frequency of exercise (day per week), assuming max 1hr per day
 var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
+var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
 
 // ==================== Social Circle Initialization ====================
 // var familyInfluence = 0;
@@ -179,6 +180,7 @@ function init() {
     updateInitialAge();
     updateInitialSticks();
     updateHeartHealth();
+    updateExercise(); // Update exercise based on initial value
 
     calculateLifeExpectancy(); //Calculate life expectancy
     if (window.updateLifeExpectancyChart) {
@@ -187,6 +189,12 @@ function init() {
 }
 
 // ==================== Human Body Characteristics Functions ====================
+
+function updateExercise() {
+    exerciseFrequency = exerciseFrequency + 2 * recoExerciseLevel; // Assuming max 1hr per day
+    // Recalculate exercise
+    exercise = exerciseFrequency * exerciseIntensity;
+}
 
 function updateInitialAge() {
     currentAge = parseFloat(document.getElementById("age").value) || 25;
@@ -655,7 +663,7 @@ function simStep() {
         const healing = 0.005 * neuroplasticity_recovery_potential;
         cognitive_decline_risk = Math.max(0, cognitive_decline_risk - healing);
     }
-    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) + cognitiveDeclineByAge - (neuroplasticity_recovery_potential * 0.005);
+    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) + cognitiveDeclineByAge - (neuroplasticity_recovery_potential * 0.005) - exercise * 0.01;
     cognitiveImpact = Math.min(1, Math.max(0, cognitive_decline + cognitiveImpact));
 
     // Update health metrics
