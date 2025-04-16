@@ -92,7 +92,7 @@ function init() {
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
     document.getElementById("tax-value").textContent = document.getElementById("tax-slider").value;
     document.getElementById("nicotine-content-value").textContent = document.getElementById("nicotine-content-slider").value;
-    
+
     //For Graphs
     initCharts();
 
@@ -452,7 +452,12 @@ function triggerStroke() {
         resetSimulation();
     }
 }
-
+function cogDeclineByAge(age) {
+    // Constants for the logistic growth model
+    const r = 0.1;  // Growth rate (adjust this for faster or slower increase)
+    const t0 = 35;  // Inflection point (age at which cognitive decline starts increasing)
+    return 1 / (1 + Math.exp(-r * (age - t0)));
+}
 function triggerCancer() {
     const survivalProbability = 0.95; // 95% chance to survive
     if (Math.random() < survivalProbability) {
@@ -627,6 +632,9 @@ function simStep() {
         updateCigaretteImage();
     }
 
+    // cognitive decline because of age
+    const cognitiveDeclineByAge = cogDeclineByAge(currentAge)
+
     const drop = previousSticks - currentSticksPerDay;
     const exposure = currentSticksPerDay / 20;
 
@@ -647,7 +655,7 @@ function simStep() {
         const healing = 0.005 * neuroplasticity_recovery_potential;
         cognitive_decline_risk = Math.max(0, cognitive_decline_risk - healing);
     }
-    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) - (neuroplasticity_recovery_potential * 0.005);
+    const cognitive_decline = (cognitive_decline_risk * 0.01) + (withdrawal_severity * 0.005) + cognitiveDeclineByAge - (neuroplasticity_recovery_potential * 0.005);
     cognitiveImpact = Math.min(1, Math.max(0, cognitive_decline + cognitiveImpact));
 
     // Update health metrics
