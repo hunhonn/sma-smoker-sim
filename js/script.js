@@ -32,11 +32,14 @@ var ageProgressionRate = 0.1; // how much age increases per step
 var simulationYear = 0; // Years elapsed in simulation
 var initialSticksPerDay = 0; // Store initial value
 var currentSticksPerDay;
+var maxSticks = 0;
 var startSmoking = false; // Flag to track if smoking starts
+var currentAgeRange = null;
 
 var exerciseFrequency = 3.75; // Frequency of exercise (day per week), assuming max 1hr per day
 var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
 var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
+
 
 // ==================== Social Circle Initialization ====================
 // var familyInfluence = 0;
@@ -52,6 +55,7 @@ var recoSugarLevel = 0; // -1 to 1
 var recoOilLevel = 0; // -1 to 1
 var adjustedConsumptionFactor = 1; // Default to 1 (no adjustment)
 var nicotineContent = 6;
+var recoExerciseLevel = 0; // -1 to 1
 
 var retirementAge = 63;
 
@@ -203,21 +207,28 @@ function updateInitialAge() {
 
 function updateInitialSticks() {
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-    if (familyInfluence) {
-        // If family influence is present, calculate the probability of starting smoking
-        const age = parseFloat(document.getElementById("age").value) || 12;
-        const legalAge = parseFloat(document.getElementById("min-age").value) || 21;
-        const maxAge = 21;
-        const minProbability = 0.05; // 10% chance at age 12
-        const maxProbability = 0.7; // 90% chance at age 21
 
-        // Linearly increase probability with age
+    const age = parseFloat(document.getElementById("age").value) || 12;
+    const legalAge = parseFloat(document.getElementById("min-age").value) || 21;
+
+    if (familyInfluence) {
+        // Probability when there is family influence
+        const maxAge = 21;
+        const minProbability = 0.1; // 10% chance at age 12
+        const maxProbability = 0.95; // 95% chance at age 21
+
         const probability = Math.min(
             maxProbability,
-            Math.max(0,minProbability + ((currentAge - age) / (maxAge - age)) * (maxProbability - minProbability) - Math.max(0,legalAge-currentAge)*0.2)
+            Math.max(
+                0,
+                minProbability +
+                ((currentAge - age) / (maxAge - age)) * (maxProbability - minProbability) -
+                Math.max(0, legalAge - currentAge) * 0.2
+            )
         );
-        console.log("Probability of starting smoking:", probability);
-        console.log("Age:", currentAge);
+
+        // console.log("Probability of starting smoking (with family influence):", probability);
+
         // Randomly decide if the person starts smoking
         if (Math.random() < probability) {
             initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0);
@@ -226,16 +237,39 @@ function updateInitialSticks() {
             initialSticksPerDay = 0; // No smoking if the random chance fails
         }
     } else {
-        // If no family influence, smoking initiation is less likely
-        initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        // Probability when there is no family influence
+        const maxAge = 25;
+        const minProbability = 0.01; // 1% chance at age 12
+        const maxProbability = 0.6; // 60% chance at age 25
+
+        const probability = Math.min(
+            maxProbability,
+            Math.max(
+                0,
+                minProbability +
+                ((currentAge - age) / (maxAge - age)) * (maxProbability - minProbability) -
+                Math.max(0, legalAge - currentAge) * 0.2
+            )
+        );
+
+        // console.log("Probability of starting smoking (without family influence):", probability);
+
+        // Randomly decide if the person starts smoking
+        if (Math.random() < probability) {
+            initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0); //maybe need to remove the document.getElementById as not used anymore.
+            startSmoking = true; // Set the flag to true if smoking starts
+        } else {
+            initialSticksPerDay = 0; // No smoking if the random chance fails
+        }
     }
+
     currentSticksPerDay = initialSticksPerDay;
     calculateLifeExpectancy();
 }
 
 function updateRetirementAge() {
     retirementAge = parseFloat(document.getElementById("retirement_age").value) || 63;
-    console.log("Retirement age set to:", retirementAge);
+    // console.log("Retirement age set to:", retirementAge);
 }
 
 // Function to calculate life expectancy based on smoking habits
@@ -289,10 +323,11 @@ function updateHeartHealth() {
         parseFloat(document.getElementById("sticks_a_day").value) || 0;
 
     // Currently sugar intake = government recommended sugar intake
+    var cholesterol = 0;
     var recoExerciseLevel = parseFloat(document.getElementById("reco-exercise").value); // boolean
     var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value); // -1 to 1
     var recoOilLevel = parseFloat(document.getElementById("reco-oil").value); // -1 to 1
-    var cholesterol = 0;
+    
 
     const lungHealth = getLungHealth();
     const lungCapacity = lungHealth ? lungHealth.capacity : 100;
@@ -390,7 +425,7 @@ function updateHealthIndicators() {
     console.log("cancer risk", cancerRisk);
     // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
-    if (heartAttackRisk > 0.7 && Math.random() < heartAttackRisk / 50) {
+    if (heartAttackRisk > 0.6 && Math.random() < heartAttackRisk / 50) {
         // if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
@@ -405,6 +440,14 @@ function updateHealthIndicators() {
         // if (Math.random() < cancerRisk/50) {
         triggerCancer();
     }
+
+    if (lungHealth.capacity < 40){
+        lifeExpectancy -= 0.5;
+        if (lungHealth.capacity < 30 && Math.random() > lungHealth.capacity / 50) {
+            triggerLungCollapse();
+        }   
+    }
+
 }
 
 function triggerHeartAttack() {
@@ -432,6 +475,12 @@ function triggerHeartAttack() {
         alert("Heart attack occurred! The patient did not survive.");
         resetSimulation();
     }
+}
+
+function triggerLungCollapse(){
+    stopSimulation();
+    alert("The patient had died from lung collapse.");
+    resetSimulation();
 }
 
 function triggerStroke() {
@@ -497,7 +546,7 @@ function updateSticksPerDay() {
     let newSticksPerDay = currentSticksPerDay;
 
     // Update addiction factor (makes it harder to quit the longer you smoke)
-    addictionFactor = Math.min(1, addictionFactor + (0.01 * simulationYear * (currentSticksPerDay / 20)));
+    addictionFactor = Math.min(1, addictionFactor + (0.01 * simulationYear * (currentSticksPerDay / 20) * (nicotineContent/6) ));
 
     let stressMultiplier;
     if (currentAge >= retirementAge) {
@@ -510,7 +559,7 @@ function updateSticksPerDay() {
     }
 
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier - recoSugarLevel * 0.01 + withdrawal_severity*10;
+    const stressFactor = (lifeStressLevel * 0.1 * stressMultiplier * (1 + nicotineContent / 6))- recoSugarLevel * 0.01 + withdrawal_severity*10;
 
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
@@ -533,7 +582,7 @@ function updateSticksPerDay() {
     }
     
 
-    const maxSticks = getMaxCigarettesForAge(currentAge);
+
     console.log("lifeStressLevel:", lifeStressLevel);
     console.log("stressMultiplier:", stressMultiplier);
     console.log("Stress Factor:", stressFactor);
@@ -543,19 +592,52 @@ function updateSticksPerDay() {
 }
 
 function getMaxCigarettesForAge(age) {
+    let mean, stdDev;
+
+    // Define mean and standard deviation for each age group
     if (age < 18) {
-        return 2;
+        mean = 2;
+        stdDev = 0.5; // Example: 95% CI ~ [1, 3]
     } else if (age < 25) {
-        return 10;
+        mean = 10;
+        stdDev = 2; // Example: 95% CI ~ [6, 14]
     } else if (age < 35) {
-        return 15;
+        mean = 15;
+        stdDev = 3; // Example: 95% CI ~ [9, 21]
     } else if (age < 45) {
-        return 15;
+        mean = 15;
+        stdDev = 3; // Example: 95% CI ~ [9, 21]
     } else if (age < 55) {
-        return 16;
+        mean = 16;
+        stdDev = 2; // Example: 95% CI ~ [12, 20]
     } else if (age >= 55) {
-        return 14;
+        mean = 14;
+        stdDev = 2; // Example: 95% CI ~ [10, 18]
     }
+
+    // Generate a random value within the 95% confidence interval
+    const randomValue = generateRandomNormal(mean, stdDev);
+
+    // Ensure the value is non-negative and return it
+    return Math.max(0, randomValue);
+}
+
+// Helper function to generate a random value from a normal distribution
+function generateRandomNormal(mean, stdDev) {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random(); // Avoid 0
+    while (v === 0) v = Math.random(); // Avoid 0
+    const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v); // Box-Muller transform
+    return z * stdDev + mean; // Scale and shift
+}
+
+function getAgeRange(age) {
+    if (age < 18) return "<18";
+    if (age < 25) return "18-24";
+    if (age < 35) return "25-34";
+    if (age < 45) return "35-44";
+    if (age < 55) return "45-54";
+    return "55+";
 }
 
 // ==================== Blood Cell Atributes ====================
@@ -629,6 +711,14 @@ function simStep() {
 
     let previousSticks = currentSticksPerDay;
 
+    // Recalculate maxSticks if the age transitions to a new range
+    const newAgeRange = getAgeRange(currentAge);
+    if (newAgeRange !== currentAgeRange) {
+        currentAgeRange = newAgeRange;
+        maxSticks = getMaxCigarettesForAge(currentAge);
+        // console.log(`Age transitioned to new range: ${newAgeRange}, recalculated maxSticks: ${maxSticks}`);
+    }
+
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
 
@@ -639,6 +729,8 @@ function simStep() {
         updateCigaretteImage();
     }
 
+    currentSticksPerDay = Math.min(maxSticks, Math.max(0, currentSticksPerDay));
+    
     // cognitive decline because of age
     const cognitiveDeclineByAge = cogDeclineByAge(currentAge)
     const drop = previousSticks - currentSticksPerDay;
@@ -646,16 +738,16 @@ function simStep() {
     // === Update Withdrawal Severity ===
     if (previousSticks > 0 && currentSticksPerDay < previousSticks) {
         // Withdrawal kicks in when there's a drop in consumption
-        withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor); // Scale based on drop and addiction
+        withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor * (nicotineContent / 6)); // Scale based on drop and addiction
         const recoveryBoost = (drop / previousSticks) * 0.05; // scale down recovery rate
         cognitive_decline = Math.max(0, cognitive_decline - recoveryBoost);
     } else if ( currentSticksPerDay > 0) {
         const declineRate = 0.002 * currentSticksPerDay; // More sticks per day = faster decline
-        withdrawal_severity = Math.max(0, withdrawal_severity - 0.01);// If no reduction or still smoking, slowly ease withdrawal
+        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.01 * (nicotineContent / 6)));// If no reduction or still smoking, slowly ease withdrawal
         cognitive_decline = Math.min(1, cognitive_decline + declineRate); // Small passive increase in decline due to continued smoking
     }else {
         // Fully quit: withdrawal easing and brain recovery
-        withdrawal_severity = Math.max(0, withdrawal_severity - 0.02);
+        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.02)*(nicotineContent / 6));
         cognitive_decline = Math.max(0, cognitive_decline - 0.005); // Recovery phase: reduce cognitive decline slowly
     }
 
@@ -684,12 +776,12 @@ function simStep() {
         addDynamicBloodCell();
     }
 
-    console.log("Simulation Year:", simulationYear);
-    console.log("Current Age:", currentAge);
-    console.log("Previous Sticks Per Day:", previousSticks);
-    console.log("Updated Sticks Per Day (before adjustment):", currentSticksPerDay);
-    console.log("Adjusted Consumption Factor:", adjustedConsumptionFactor);
-    console.log("Updated Sticks Per Day (after adjustment):", currentSticksPerDay);
+    // console.log("Simulation Year:", simulationYear);
+    // console.log("Current Age:", currentAge);
+    // console.log("Previous Sticks Per Day:", previousSticks);
+    // console.log("Updated Sticks Per Day (before adjustment):", currentSticksPerDay);
+    // console.log("Adjusted Consumption Factor:", adjustedConsumptionFactor);
+    // console.log("Updated Sticks Per Day (after adjustment):", currentSticksPerDay);
 
     updateBloodCells();
     updateSurface();
@@ -717,6 +809,7 @@ function endSimulation() {
 function startSimulation() {
     if (!isRunning) {
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        maxSticks = getMaxCigarettesForAge(currentAge);
 
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         // console.log("started sim with", currentSticksPerDay, "sticks per day");
@@ -746,7 +839,7 @@ function resetSimulation() {
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
     initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-    currentSticksPerDay = SticksPerDay; // Reset current sticks to initial value
+    currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
     currentAge = parseFloat(document.getElementById("age").value) || 12;
     simulationYear = 0;
 
