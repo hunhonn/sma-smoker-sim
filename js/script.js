@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
-import { updateMinSmokeAge, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier} from './national_policy.js';
+import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier} from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -34,6 +34,9 @@ var initialSticksPerDay = 0; // Store initial value
 var currentSticksPerDay;
 var startSmoking = false; // Flag to track if smoking starts
 
+var exerciseFrequency = 3.75; // Frequency of exercise (day per week), assuming max 1hr per day
+var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
+
 // ==================== Social Circle Initialization ====================
 // var familyInfluence = 0;
 // var lifeStressLevel = 0.3;
@@ -45,7 +48,8 @@ var neuroplasticity_recovery_potential=0;
 var cognitive_decline_risk=0;
 var cognitiveImpact=0;
 // ==================== Govt Intervention Initialization ====================
-var govtInterventionLevel = 0;
+var recoSugarLevel = 0; // -1 to 1
+var recoOilLevel = 0; // -1 to 1
 var adjustedConsumptionFactor = 1; // Default to 1 (no adjustment)
 
 var retirementAge = 63; //default
@@ -100,6 +104,10 @@ function init() {
     document.getElementById("min-age").addEventListener("input", updateMinSmokeAge);
 
     // event listener for checkbox
+    document.getElementById("reco-exercise").addEventListener("change", function () {
+        updateExerciseLevel(this); // Pass the checkbox element
+    });
+
     document.getElementById("family-influence").addEventListener("change", function () {
         updateFamilyInfluence(this); // Pass the checkbox element
     });
@@ -123,9 +131,19 @@ function init() {
         updateTaxLevel(this); // Dynamically update sticks per day
     });
 
+    document.getElementById("reco-exercise").addEventListener("input", function () {
+        recoExerciseLevel = parseFloat(this.value);
+        updateSliderLabel(this, "reco-exercise-value")
+    });
+
     document.getElementById("reco-sugar").addEventListener("input", function () {
-        govtInterventionLevel = parseFloat(this.value);
+        recoSugarLevel= parseFloat(this.value);
         updateSliderLabel(this, "reco-sugar-value")
+    });
+
+    document.getElementById("reco-oil").addEventListener("input", function () {
+        recoOilLevel = parseFloat(this.value);
+        updateSliderLabel(this, "reco-oil-value")
     });
 
     document.getElementById("life-stress").addEventListener("input", function () {
@@ -257,8 +275,9 @@ function updateHeartHealth() {
         parseFloat(document.getElementById("sticks_a_day").value) || 0;
 
     // Currently sugar intake = government recommended sugar intake
-    var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value);
-    var recoOilLevel = parseFloat(document.getElementById("reco-oil").value);
+    var recoExerciseLevel = parseFloat(document.getElementById("reco-exercise").value); // boolean
+    var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value); // -1 to 1
+    var recoOilLevel = parseFloat(document.getElementById("reco-oil").value); // -1 to 1
     var cholesterol = 0;
 
     const lungHealth = getLungHealth();
@@ -472,7 +491,7 @@ function updateSticksPerDay() {
     }
 
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier;
+    const stressFactor = lifeStressLevel * 0.1 * stressMultiplier - recoSugarLevel * 0.01;
 
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
