@@ -2,7 +2,7 @@ import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './resp
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
 import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
 
-var animationDelay = 100;
+var animationDelay = 100; 
 var simTimer;
 var isRunning = false;
 
@@ -15,7 +15,6 @@ var pathLength;
 var bloodCells = [];
 var baseBloodCellSpeed = 0.05;
 var cellSpeed = baseBloodCellSpeed; // Add this line
-var speedSlider = document.getElementById("slider1");
 var veinPathD = "M175 210V150H380V800";
 
 var heartAttackRisk = 0;
@@ -93,6 +92,17 @@ function init() {
     pathLength = pathElement.getTotalLength();
 
     initRespiratorySystem(svg);
+
+    document.getElementById("animationSpeed").addEventListener("input", function () {
+        const speedValue = parseInt(this.value, 10); // Get the slider value
+        animationDelay = 100 / speedValue; // Adjust animationDelay (higher speedValue = faster simulation)
+
+        if (isRunning) {
+            // Restart the simulation to apply the new delay
+            window.clearInterval(simTimer);
+            simTimer = window.setInterval(simStep, animationDelay);
+        }
+    });
 
     // Initialize span values for sliders
     // document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;

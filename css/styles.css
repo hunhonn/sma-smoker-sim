@@ -57,10 +57,12 @@
 }
 
 #graph-insights-tabs{
-    height: 70%;
+    /* height: 70%; */
+    height:100%;
     margin-bottom: 1em;
     background-color: #D9D9D9;
     border-radius: 1em;
+    overflow: auto;
 }
 
 #status-table{
@@ -97,6 +99,7 @@
     display: none;
     padding: 10px;
     height: calc(100% - 40px - 1em);
+    /* height: 100%; */
     border-radius: 1em;
 }
 
