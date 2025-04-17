@@ -34,6 +34,7 @@ var initialSticksPerDay = 0; // Store initial value
 var currentSticksPerDay;
 var maxSticks = 0;
 var startSmoking = false; // Flag to track if smoking starts
+var isInRehab = false; // Flag to track if in rehab
 var currentAgeRange = null;
 
 var exerciseFrequency = 3.75; // Frequency of exercise (day per week), assuming max 1hr per day
@@ -349,7 +350,7 @@ function updateHeartHealth() {
 
     // Calculate heart stress based on both oxygen level and blood pressure
     // Heart stress increases when oxygen is low and blood pressure is high
-    // Formula: higher values = more stress (0-100 scale)
+    // Formula: higher values = more stress (0-100 scale)x
     heartStress = ((100 - heart_oxygen_level) * 0.5) + ((bloodPressure - 1) * 30);
     heartStress = Math.min(100, Math.max(0, heartStress)); // Clamp between 0-100
 
@@ -543,6 +544,10 @@ function triggerCancer() {
 
 // Function to update number of cigs
 function updateSticksPerDay() {
+    if (isInRehab) {
+        // Do not update sticks per day during rehabilitation
+        return currentSticksPerDay;
+    }
     // Base progression from initial habits
     let newSticksPerDay = currentSticksPerDay;
 
@@ -705,9 +710,28 @@ function simStep() {
 
     updatePublicSmokingBan(document.getElementById("public-smoking"));
 
+    // Prevent smoking updates during rehabilitation
+    if (isInRehab) {
+        console.log("Simulation is in rehabilitation. Smoking behavior is paused.");
+        respiratorySimStep(isRunning, currentSticksPerDay); // Continue other simulation steps
+        updateBloodCells();
+        updateSurface();
+        // Update health indicators and visuals during rehab
+        updateHeartHealth();
+        updateHealthIndicators();
+        return; // Skip smoking-related updates
+    }
+
     // Check if the user has started smoking
     if (!startSmoking) {
         updateInitialSticks();
+    }
+
+    // Trigger rehab if smoking starts before the minimum smoking age
+    const legalAge = parseFloat(document.getElementById("min-age").value) || 21;
+    if (startSmoking && currentAge < legalAge && !isInRehab) {
+        rehab();
+        return; // Exit the step to prevent further updates during rehab
     }
 
     let previousSticks = currentSticksPerDay;
@@ -732,7 +756,7 @@ function simStep() {
 
     currentSticksPerDay = Math.min(maxSticks, Math.max(0, currentSticksPerDay));
     
-    // cognitive decline because of age
+    // Cognitive decline because of age
     const cognitiveDeclineByAge = cogDeclineByAge(currentAge)
     const drop = previousSticks - currentSticksPerDay;
 
@@ -809,6 +833,10 @@ function endSimulation() {
 // Optional: Functions to control the simulation
 function startSimulation() {
     if (!isRunning) {
+        if (!isInRehab) { // Only allow smoking updates if not in rehab
+            maxSticks = getMaxCigarettesForAge(currentAge);
+            currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        }
         // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         maxSticks = getMaxCigarettesForAge(currentAge);
 
@@ -897,6 +925,38 @@ function updateCigaretteImage() {
     } else {
         imageContainer.innerHTML = ""; // Clear the image if sticks per day is 0
     }
+}
+
+function rehab() {
+    if (isInRehab) {
+        console.log("Rehabilitation is already in progress. No new session will be triggered.");
+        return; // Exit if already in rehab
+    }
+
+    // Stop smoking for a random duration between 3 and 10 years
+    const rehabDuration = Math.floor(Math.random() * 8) + 3; // Random number between 3 and 10
+    alert(`You were caught smoking below the minimum age. Rehabilitation will prevent you from smoking for ${rehabDuration} years.`);
+
+    // Reset smoking habits
+    currentSticksPerDay = 0;
+    startSmoking = false;
+    isInRehab = true;
+
+    // Reset risks to their original values
+    heartAttackRisk = 0;
+    strokeRisk = 0;
+    cancerRisk = 0;
+
+    // Update health metrics and visuals
+    updateHeartHealth();
+    updateHealthIndicators();
+
+    // Schedule smoking to resume after the rehab duration
+    setTimeout(() => {
+        alert(`Rehabilitation period is over. You are now able to freely smoke.`);
+        isInRehab = false;
+        startSmoking = true; // Allow smoking to resume
+    }, rehabDuration * 1000); // Multiply by 1000 to simulate years as seconds
 }
 
 export {
