@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMA-Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript" src="js/d3.min.js"></script>
     <link rel="stylesheet" href="./css/styles.css" media="screen">
 
@@ -112,6 +113,8 @@
                 </div>
                 <div id="graphs" class="tab-content active">
                     Graphs
+                    <canvas id="lifeExpectancyChart" width="480" height="240"></canvas>
+                    <canvas id="multiSimHistogram" width="480" height="240"></canvas>
                 </div>
                 <div id="insights" class="tab-content">
                     Insights
@@ -129,6 +132,7 @@
     <div id="controls" style="position:absolute;bottom:0;left:45%;color:#FAFAFA">Animation Speed:
         <input id="animationSpeed" type="range" min="1" value="1" max="100" step="1" />
         <button id="StartORPause" style="margin-left:1rem; vertical-align: middle;">Start/Pause</button>
+        <button id="runMultipleSimulations">Run Multiple Simulations</button>
     </div>
 
     <!-- <a id="credits" href="http://www.icons-land.com" style="position:absolute;bottom:0;right:0">Icons by icons-land.com</a> -->

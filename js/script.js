@@ -62,6 +62,14 @@ var earlyRehabilitationTrigger = false; // Flag to track if early rehabilitation
 var retirementAge = 63;
 var rehabDuration = 0;
 
+// ============== Death Initialization ==============
+var ageOfDeath_heartAttack = null;
+var ageOfDeath_stroke = null;
+var ageOfDeath_cancer = null;
+var ageOfDeath_lungCollapse = null;
+var ageOfDeath_natural = null;
+var ageOfDeath = null;
+
 // ==================== Initialization ====================
 
 window.addEventListener("load", init);
@@ -104,6 +112,14 @@ function init() {
         }
     });
 
+// ============== Multiple Simulation Initialization =================
+
+document.getElementById("runMultipleSimulations").addEventListener("click", function () {
+    const numRuns = parseInt(prompt("Enter the number of simulation runs:")) || 10;
+    // runMultipleSimulations(numRuns);
+});
+
+// ==================== Simulation Initialization ====================
     // Initialize span values for sliders
     // document.getElementById("govt-intervention-value").textContent = document.getElementById("govt-intervention").value;
     document.getElementById("reco-sugar-value").textContent = document.getElementById("reco-sugar").value;
@@ -502,6 +518,8 @@ function triggerHeartAttack() {
     } else {
         stopSimulation();
         document.getElementById("StartORPause").textContent = "Start";
+        ageOfDeath_heartAttack = currentAge;
+        ageOfDeath = ageOfDeath_heartAttack;
         alert("Heart attack occurred! The patient did not survive.");
         resetSimulation();
     }
@@ -509,6 +527,8 @@ function triggerHeartAttack() {
 
 function triggerLungCollapse(){
     stopSimulation();
+    ageOfDeath_lungCollapse = currentAge;
+    ageOfDeath = ageOfDeath_lungCollapse;
     alert("The patient had died from lung collapse.");
     resetSimulation();
 }
@@ -534,6 +554,8 @@ function triggerStroke() {
         updateHealthIndicators();
     } else {
         stopSimulation();
+        ageOfDeath_stroke = currentAge;
+        ageOfDeath = ageOfDeath_stroke;
         alert("Stroke occurred! The patient did not survive.");
         resetSimulation();
     }
@@ -565,6 +587,8 @@ function triggerCancer() {
         updateHealthIndicators();
     } else {
         stopSimulation();
+        ageOfDeath_cancer = currentAge;
+        ageOfDeath = ageOfDeath_cancer;
         alert("Patient has been diagnosed with Stage 4 cancer. The patient passed away soon after.");
         resetSimulation();
     }
@@ -826,7 +850,9 @@ function simStep() {
 
     // Check if we've reached life expectancy
     if (currentAge >= lifeExpectancy) {
-        endSimulation();
+        stopSimulation();
+        ageOfDeath_natural = currentAge;
+        ageOfDeath = ageOfDeath_natural;
         return;
     }
 
@@ -850,22 +876,6 @@ function simStep() {
 }
 
 // ==================== UI Atributes ====================
-
-// End simulation when life expectancy is reached
-function endSimulation() {
-    stopSimulation();
-    alert(`Simulation ended: Subject reached end of life expectancy at age ${currentAge.toFixed(1)}`);
-
-    // Display final insights
-    var insights = document.getElementById("insights");
-    if (insights) {
-        insights.innerHTML += "<h3>SIMULATION ENDED</h3>" +
-            "<p>Life expectancy reached.</p>" +
-            "<p>Final age: " + currentAge.toFixed(1) + "</p>" +
-            "<p>Years of life lost due to smoking: " +
-            (80 - lifeExpectancy).toFixed(1) + "</p>";
-    }
-}
 
 // Optional: Functions to control the simulation
 function startSimulation() {
