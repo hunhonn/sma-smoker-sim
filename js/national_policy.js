@@ -46,7 +46,7 @@ function updatePublicSmokingBan(checkbox) {
     } else {
         publicSmokingMultiplier = 1;
     }
-    console.log("Public smoking ban multiplier set to:", publicSmokingMultiplier);
+    // console.log("Public smoking ban multiplier set to:", publicSmokingMultiplier);
 }
 
 function updateImagePacks(checkbox){

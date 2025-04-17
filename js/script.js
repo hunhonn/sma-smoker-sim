@@ -1,4 +1,4 @@
-import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
+import { initRespiratorySystem, respiratorySimStep, getLungHealth, airParticles } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
 import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
 
@@ -24,7 +24,7 @@ var bloodPressure = 1;
 var heart_oxygen_level = 100;
 var heartStress = 0;
 // ==================== Parameter Initialization ====================
-var currentAge = 25;
+var currentAge = 12;
 const baseLifeExpectancy = 83;
 var lifeExpectancy = 80;
 var ageProgressionRate = 0.1; // how much age increases per step
@@ -116,7 +116,7 @@ function init() {
 
 document.getElementById("runMultipleSimulations").addEventListener("click", function () {
     const numRuns = parseInt(prompt("Enter the number of simulation runs:")) || 10;
-    // runMultipleSimulations(numRuns);
+    runMultipleSimulations(numRuns);
 });
 
 // ==================== Simulation Initialization ====================
@@ -246,7 +246,7 @@ function updateExercise() {
 }
 
 function updateInitialAge() {
-    currentAge = parseFloat(document.getElementById("age").value) || 25;
+    currentAge = parseFloat(document.getElementById("age").value) || 12;
     simulationYear = 0;
     calculateLifeExpectancy();
 }
@@ -465,34 +465,10 @@ function updateHealthIndicators() {
             "<p>Years of Life Lost: " + (baseLifeExpectancy - lifeExpectancy).toFixed(1) + "</p>";
     }
 
-    console.log("heartstress", heartStress);
-    console.log("heart attack risk", heartAttackRisk);
-    console.log("stroke risk", strokeRisk);
-    console.log("cancer risk", cancerRisk);
-    // console.log(lungHealth.tarAccumulation);
-    // Random chance of heart attack based on risk
-    if (heartAttackRisk > 0.3 && Math.random() < heartAttackRisk / 50) {
-        // if (Math.random() < heartAttackRisk/50) {
-        triggerHeartAttack();
-    }
-
-    // Random chance of stroke based on risk
-    if (strokeRisk > 0.3 && Math.random() < strokeRisk / 50) {
-        // if (Math.random() < strokeRisk/50) {
-        triggerStroke();
-    }
-
-    if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
-        // if (Math.random() < cancerRisk/50) {
-        triggerCancer();
-    }
-
-    if (lungHealth.capacity < 30){
-        lifeExpectancy -= 0.5;
-        if (lungHealth.capacity < 20 && Math.random() > lungHealth.capacity / 50) {
-            triggerLungCollapse();
-        }   
-    }
+    // console.log("heartstress", heartStress);
+    // console.log("heart attack risk", heartAttackRisk);
+    // console.log("stroke risk", strokeRisk);
+    // console.log("cancer risk", cancerRisk);
 
 }
 
@@ -641,9 +617,9 @@ function updateSticksPerDay() {
     
 
 
-    console.log("lifeStressLevel:", lifeStressLevel);
-    console.log("stressMultiplier:", stressMultiplier);
-    console.log("Stress Factor:", stressFactor);
+    // console.log("lifeStressLevel:", lifeStressLevel);
+    // console.log("stressMultiplier:", stressMultiplier);
+    // console.log("Stress Factor:", stressFactor);
 
     // Ensure smoking doesn't go below zero
     return Math.min(maxSticks, Math.max(0, newSticksPerDay));
@@ -749,11 +725,8 @@ function updateSurface() {
         });
 }
 
-// The simulation step: possibly add a new cell, update all cells, and redraw them.
-// Modify the simStep function to update age and check for end condition
 function simStep() {
     if (!isRunning) return;
-
     // Update simulation time and smoking habit
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
@@ -761,8 +734,6 @@ function simStep() {
     document.getElementById("age-value").textContent = currentAge.toFixed(0);
 
     updatePublicSmokingBan(document.getElementById("public-smoking"));
-    console.log("duration since",currentAge - rehabAge);
-    console.log("rehabDuration", rehabDuration);
 
     if (isInRehab && currentAge - rehabAge >= rehabDuration) {
         alert(`Rehabilitation period is over. Simulator can freely smoke.`);
@@ -772,11 +743,9 @@ function simStep() {
 
     // Prevent smoking updates during rehabilitation
     if (isInRehab) {
-        // console.log("Simulation is in rehabilitation. Smoking behavior is paused.");
         respiratorySimStep(isRunning, currentSticksPerDay); // Continue other simulation steps
         updateBloodCells();
         updateSurface();
-        // Update health indicators and visuals during rehab
         updateHeartHealth();
         updateHealthIndicators();
         return; // Skip smoking-related updates
@@ -802,20 +771,17 @@ function simStep() {
     if (newAgeRange !== currentAgeRange) {
         currentAgeRange = newAgeRange;
         maxSticks = getMaxCigarettesForAge(currentAge);
-        // console.log(`Age transitioned to new range: ${newAgeRange}, recalculated maxSticks: ${maxSticks}`);
     }
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
-
     currentSticksPerDay *= adjustedConsumptionFactor;
     currentSticksPerDay *= publicSmokingMultiplier;
+    currentSticksPerDay = Math.min(maxSticks, Math.max(0, currentSticksPerDay));
 
     if (currentSticksPerDay > 0) {
         updateCigaretteImage();
     }
-
-    currentSticksPerDay = Math.min(maxSticks, Math.max(0, currentSticksPerDay));
     
     // Cognitive decline because of age
     const cognitiveDeclineByAge = cogDeclineByAge(currentAge)
@@ -843,17 +809,24 @@ function simStep() {
     // Update health metrics
     updateHeartHealth();
 
-    // Update the life expectancy chart with new data
-    if (window.updateLifeExpectancyChart) {
-        updateLifeExpectancyChart(currentAge, lifeExpectancy);
+    if (heartAttackRisk > 0.3 && Math.random() < heartAttackRisk / 50) {
+        console.log("Heart Attack Triggered: Risk =", heartAttackRisk);
+        triggerHeartAttack();
     }
-
-    // Check if we've reached life expectancy
-    if (currentAge >= lifeExpectancy) {
-        stopSimulation();
-        ageOfDeath_natural = currentAge;
-        ageOfDeath = ageOfDeath_natural;
-        return;
+    if (strokeRisk > 0.3 && Math.random() < strokeRisk / 50) {
+        console.log("Stroke Triggered: Risk =", strokeRisk);
+        triggerStroke();
+    }
+    if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
+        console.log("Cancer Triggered: Risk =", cancerRisk);
+        triggerCancer();
+    }
+    const lungHealth = getLungHealth();
+    if (lungHealth.capacity < 30) {
+        lifeExpectancy -= 0.5;
+        if (lungHealth.capacity < 20 && Math.random() > lungHealth.capacity / 50) {
+            triggerLungCollapse();
+        }
     }
 
     respiratorySimStep(isRunning, currentSticksPerDay);
@@ -864,15 +837,22 @@ function simStep() {
         addDynamicBloodCell();
     }
 
-    // console.log("Simulation Year:", simulationYear);
-    // console.log("Current Age:", currentAge);
-    // console.log("Previous Sticks Per Day:", previousSticks);
-    // console.log("Updated Sticks Per Day (before adjustment):", currentSticksPerDay);
-    // console.log("Adjusted Consumption Factor:", adjustedConsumptionFactor);
-    // console.log("Updated Sticks Per Day (after adjustment):", currentSticksPerDay);
-
     updateBloodCells();
     updateSurface();
+
+    // Update the life expectancy chart with new data
+    if (window.updateLifeExpectancyChart) {
+        updateLifeExpectancyChart(currentAge, lifeExpectancy);
+    }
+
+    // Check if we've reached life expectancy
+    if (currentAge >= lifeExpectancy) {
+        console.log("Simulation Ended: Current Age =", currentAge, "Life Expectancy =", lifeExpectancy);
+        stopSimulation();
+        ageOfDeath_natural = currentAge;
+        ageOfDeath = ageOfDeath_natural;
+        return;
+    }
 }
 
 // ==================== UI Atributes ====================
@@ -997,6 +977,89 @@ function rehab() {
     // Update health metrics and visuals
     updateHeartHealth();
     updateHealthIndicators();
+}
+
+function runMultipleSimulations(numRuns) {
+    const deathAges = [];
+    let originalAlert = window.alert; // Save the original alert function
+
+    // Override alert and other UI-related functions
+    window.alert = function () {}; // No-op function to suppress alerts
+    let originalUpdateHealthIndicators = updateHealthIndicators;
+    let originalUpdateCigaretteImage = updateCigaretteImage;
+    let originalUpdateSurface = updateSurface;
+    updateHealthIndicators = function () {}; // No-op function
+    updateSurface = function () {};
+    updateCigaretteImage = function () {}; // No-op function
+
+    for (let i = 0; i < numRuns; i++) {
+        console.log(`Running simulation ${i + 1} of ${numRuns}..., ageofdeath: ${ageOfDeath}`);
+        isRunning = false; // Ensure simulation is not running
+        // Reset all global variables to their initial state
+        resetSimulationState();
+        if(ageOfDeath !== null) {
+            ageOfDeath = null; // Reset age of death for each simulation
+        }
+    
+        maxSticks = getMaxCigarettesForAge(currentAge);
+        currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+        console.log(`Before while loop: ageOfDeath = ${ageOfDeath}, currentAge = ${currentAge}, sticks = ${currentSticksPerDay}`);
+        // Run the simulation until death
+        while (ageOfDeath === null) {
+            simulationYear += ageProgressionRate; // Increment simulation year
+            currentAge = parseFloat(document.getElementById("age").value) + simulationYear; // Update current age
+            isRunning = true; // Ensure simulation is not running
+            simStep();
+            console.log(`Simulation ${i + 1}: Current Age = ${currentAge}, Life Expectancy = ${lifeExpectancy}, Age of Death = ${ageOfDeath}, heartAttack Risk = ${heartAttackRisk}, stroke Risk = ${strokeRisk}, cancer Risk = ${cancerRisk}`);
+            // await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to the browser
+        }
+        // Record the age of death
+        deathAges.push(ageOfDeath);
+    }
+
+    // Restore the original functions
+    window.alert = originalAlert;
+    updateHealthIndicators = originalUpdateHealthIndicators;
+    updateCigaretteImage = originalUpdateCigaretteImage;
+    updateSurface = originalUpdateSurface;
+
+    // Plot the histogram of death ages
+    plotMultiSimHistogram(deathAges);
+}
+
+function resetSimulationState() {
+    currentAge = parseFloat(document.getElementById("age").value) || 12;
+    simulationYear = 0;
+    maxSticks = getMaxCigarettesForAge(currentAge);
+    startSmoking = false;
+    isInRehab = false;
+    rehabAge = 0;
+    rehabDuration = 0;
+    addictionFactor = 0;
+    withdrawal_severity = 0;
+    cognitive_decline = 0;
+    Neuroplasticity = 0;
+    bloodPressure = 1;
+    heart_oxygen_level = 100;
+    heartStress = 0;
+    heartAttackRisk = 0;
+    strokeRisk = 0;
+    cancerRisk = 0;
+    lifeExpectancy = calculateLifeExpectancy();
+    ageOfDeath = null;
+    ageOfDeath_heartAttack = null;
+    ageOfDeath_stroke = null;
+    ageOfDeath_cancer = null;
+    ageOfDeath_lungCollapse = null;
+    ageOfDeath_natural = null;
+    currentAgeRange = null;
+    bloodCells = [];
+    if (typeof airParticles !== "undefined") airParticles.length = 0;
+    if (typeof tarAccumulation !== "undefined") tarAccumulation = 0;
+    if (typeof lungCapacity !== "undefined") lungCapacity = 100;
+    updateInitialSticks(); // <-- Ensure this is called last!
+    currentSticksPerDay = initialSticksPerDay;
+    console.log("resetSimulationState: ageOfDeath reset to", ageOfDeath, "currentAge:", currentAge, "sticks:", currentSticksPerDay);
 }
 
 export {
