@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
-import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier} from './national_policy.js';
+import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
 
 var animationDelay = 100;
 var simTimer;
@@ -51,6 +51,7 @@ var addictionFactor = 0; // 0 - 480 mg
 var withdrawal_severity =0; // 0 to 1
 var cognitive_decline = 0;  // 0 to 1
 var Neuroplasticity=0; // 0 to 1
+var intelligenceFromPacks = 1; // 0.2 or 0.5
 // ==================== Govt Intervention Initialization ====================
 var recoSugarLevel = 0; // -1 to 1
 var recoOilLevel = 0; // -1 to 1
@@ -127,6 +128,10 @@ function init() {
 
     document.getElementById("public-smoking").addEventListener("change", function () {
         updatePublicSmokingBan(this);
+    });
+
+    document.getElementById("smoking-image").addEventListener("change", function () {
+        intelligenceFromPacks = updateImagePacks(this);
     });
 
     // event listener for sliders
@@ -783,7 +788,7 @@ function simStep() {
         cognitive_decline = Math.max(0, cognitive_decline - 0.005); // Recovery phase: reduce cognitive decline slowly
     }
 
-    Neuroplasticity = Math.max(0, cognitive_decline*0.5 + cognitiveDeclineByAge*0.5 - exercise/70);
+    Neuroplasticity = Math.max(0, cognitive_decline * intelligenceFromPacks + cognitiveDeclineByAge*0.5 - exercise/70);
    
 
     // Update health metrics

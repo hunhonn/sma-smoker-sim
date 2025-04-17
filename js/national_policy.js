@@ -4,7 +4,7 @@ var minSmokeAge = 21; // Default minimum smoking age
 var publicSmokingMultiplier = 1;
 
 const C0 = 100;
-const elasticity = -0.5; 
+const elasticity = -0.5;
 
 function consumptionAtTaxRate(taxRate) {
     return C0 * Math.pow(1 + taxRate, elasticity);
@@ -49,6 +49,14 @@ function updatePublicSmokingBan(checkbox) {
     console.log("Public smoking ban multiplier set to:", publicSmokingMultiplier);
 }
 
+function updateImagePacks(checkbox){
+    if(checkbox.checked){
+        return 0.2;
+    } else {
+        return 0.5;
+    }
+}
+
 export {
     updateMinSmokeAge,
     updateExerciseLevel,
@@ -56,5 +64,6 @@ export {
     updateOilLevel,
     updateTaxLevel,
     updatePublicSmokingBan,
-    publicSmokingMultiplier
+    publicSmokingMultiplier,
+    updateImagePacks
 };
