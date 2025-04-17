@@ -139,11 +139,6 @@ function init() {
         updateTaxLevel(this); // Dynamically update sticks per day
     });
 
-    document.getElementById("reco-exercise").addEventListener("input", function () {
-        recoExerciseLevel = parseFloat(this.value);
-        updateSliderLabel(this, "reco-exercise-value")
-    });
-
     document.getElementById("reco-sugar").addEventListener("input", function () {
         recoSugarLevel= parseFloat(this.value);
         updateSliderLabel(this, "reco-sugar-value")
