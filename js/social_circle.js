@@ -31,10 +31,22 @@ function updateSmokerFriends(checkbox) {
     // console.log("Smoker friends influence set to:", socialInfluence);
 }
 
+function updateExIntLevel(value) {
+    exIntLevel = parseFloat(value);
+    updateSliderLabel(value, "ex-int-value");
+}
+
+function updateExFreLevel(value) {
+    exFreLevel = parseFloat(value);
+    updateSliderLabel(value, "ex-fre-value");
+}
+
 export {familyInfluence,
         lifeStressLevel,
         socialInfluence, 
         updateFamilyInfluence, 
         updateLifeStressLevel,
-        updateSmokerFriends
+        updateSmokerFriends,
+        updateExIntLevel,
+        updateExFreLevel
         };

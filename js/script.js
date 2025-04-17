@@ -1,5 +1,5 @@
 import { initRespiratorySystem, respiratorySimStep, getLungHealth } from './respiratory.js';
-import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends } from './social_circle.js';
+import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
 import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier} from './national_policy.js';
 
 var animationDelay = 100;
@@ -36,7 +36,7 @@ var maxSticks = 0;
 var startSmoking = false; // Flag to track if smoking starts
 var currentAgeRange = null;
 
-var exerciseFrequency = 3.75; // Frequency of exercise (day per week), assuming max 1hr per day
+var exerciseFrequency = 3.8; // Frequency of exercise (day per week), assuming max 1hr per day
 var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
 var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
 
@@ -96,6 +96,8 @@ function init() {
     document.getElementById("life-stress-value").textContent = document.getElementById("life-stress").value;
     document.getElementById("tax-value").textContent = document.getElementById("tax-slider").value;
     document.getElementById("nicotine-content-value").textContent = document.getElementById("nicotine-content-slider").value;
+    document.getElementById("ex-int-value").textContent = document.getElementById("ex-int").value;
+    document.getElementById("ex-fre-value").textContent = document.getElementById("ex-fre").value;
 
     //For Graphs
     initCharts();
@@ -166,6 +168,17 @@ function init() {
         updateSliderLabel(this, "nicotine-content-value");
     });
 
+    document.getElementById("ex-int").addEventListener("input", function () {
+        exerciseIntensity = parseFloat(this.value);
+        updateSliderLabel(this, "ex-int-value")
+    });
+
+    document.getElementById("ex-fre").addEventListener("input", function () {
+        exerciseFrequency = parseFloat(this.value);
+        updateSliderLabel(this, "ex-fre-value")
+    });
+
+
     document.getElementById("StartORPause").addEventListener("click", startSimulation);
 
 
@@ -194,7 +207,7 @@ function init() {
 // ==================== Human Body Characteristics Functions ====================
 
 function updateExercise() {
-    exerciseFrequency = exerciseFrequency + 2 * recoExerciseLevel; // Assuming max 1hr per day
+    exerciseFrequency = Math.min(7, exerciseFrequency + 2 * recoExerciseLevel); // Assuming max 1hr per day
     // Recalculate exercise
     exercise = exerciseFrequency * exerciseIntensity;
 }
@@ -324,7 +337,6 @@ function updateHeartHealth() {
 
     // Currently sugar intake = government recommended sugar intake
     var cholesterol = 0;
-    var recoExerciseLevel = parseFloat(document.getElementById("reco-exercise").value); // boolean
     var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value); // -1 to 1
     var recoOilLevel = parseFloat(document.getElementById("reco-oil").value); // -1 to 1
     
