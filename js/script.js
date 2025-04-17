@@ -357,28 +357,28 @@ function updateHeartHealth() {
     // Using sigmoid function to create realistic risk curve
 
     if (currentAge < 50) {
-        heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40)));
+        heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50)));
     } else {
-        Math.max(heartAttackRisk = 1 / (1 + Math.exp(-0.1 * (heartStress - 35))), heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 40))));
+        heartAttackRisk = Math.max(1 / (1 + Math.exp(-0.1 * (heartStress - 35))), 1 / (1 + Math.exp(-0.1 * (heartStress - 40))));
     }
 
     // Calculate stroke risk: 0-100%, increases with blood pressure
     if (currentAge < 50) { 
-        strokeRisk = 1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)));
+        strokeRisk = 1 / (1 + Math.exp(-0.5 * (bloodPressure - 5)));
     } else {
         strokeRisk = Math.max(
-            1 / (1 + Math.exp(-0.07 * (bloodPressure - 1))),
-            1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)))
+            1 / (1 + Math.exp(-0.005 * (bloodPressure - 60))),
+            1 / (1 + Math.exp(-0.003 * (bloodPressure - 60)))
         );
     }
 
-    // Calculate stroke risk: 0-100%, increases with blood pressure
-    if (currentAge < 50) { 
-        cancerRisk = 1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)));
+    // Calculate cancer risk: 0-100%, increases with blood pressure
+    if (currentAge < 40) { 
+        cancerRisk = 1 / (1 + Math.exp(-0.05 * (sticksPerDay - 80)));
     } else {
         cancerRisk = Math.max(
-            1 / (1 + Math.exp(-0.07 * (bloodPressure - 1))),
-            1 / (1 + Math.exp(-0.05 * (bloodPressure - 1)))
+            1 / (1 + Math.exp(-0.07 * (sticksPerDay - 30))),
+            1 / (1 + Math.exp(-0.05 * (sticksPerDay - 30)))
         );
     }
 
@@ -413,6 +413,7 @@ function updateHealthIndicators() {
             "<p>Blood Pressure: " + bloodPressure.toFixed(2) + "x normal</p>" +
             "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
             "<p>Stroke Risk: " + (strokeRisk * 100).toFixed(1) + "%</p>" +
+            "<p>Cancer Risk: " + (cancerRisk * 100).toFixed(1) + "%</p>" +
             "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
             "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
             "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
@@ -425,25 +426,25 @@ function updateHealthIndicators() {
     console.log("cancer risk", cancerRisk);
     // console.log(lungHealth.tarAccumulation);
     // Random chance of heart attack based on risk
-    if (heartAttackRisk > 0.6 && Math.random() < heartAttackRisk / 50) {
+    if (heartAttackRisk > 0.3 && Math.random() < heartAttackRisk / 50) {
         // if (Math.random() < heartAttackRisk/50) {
         triggerHeartAttack();
     }
 
     // Random chance of stroke based on risk
-    if (strokeRisk > 0.7 && Math.random() < strokeRisk / 50) {
+    if (strokeRisk > 0.3 && Math.random() < strokeRisk / 50) {
         // if (Math.random() < strokeRisk/50) {
         triggerStroke();
     }
 
-    if (cancerRisk > 0.7 && Math.random() < cancerRisk / 50) {
+    if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
         // if (Math.random() < cancerRisk/50) {
         triggerCancer();
     }
 
-    if (lungHealth.capacity < 40){
+    if (lungHealth.capacity < 30){
         lifeExpectancy -= 0.5;
-        if (lungHealth.capacity < 30 && Math.random() > lungHealth.capacity / 50) {
+        if (lungHealth.capacity < 20 && Math.random() > lungHealth.capacity / 50) {
             triggerLungCollapse();
         }   
     }
