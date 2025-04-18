@@ -991,6 +991,14 @@ function rehab() {
 
 function runMultipleSimulations(numRuns) {
     const deathAges = [];
+    // Initialise a dictionary to store the count of each cause of death
+    const listOfDeath = {
+        "Heart Attack": 0,
+        "Stroke": 0,
+        "Cancer": 0,
+        "Lung Collapse": 0,
+        "Natural Causes": 0
+    };
     let originalAlert = window.alert; // Save the original alert function
 
     // Override alert and other UI-related functions
@@ -1030,6 +1038,12 @@ function runMultipleSimulations(numRuns) {
         // Record the age of death
         console.log(`Cause of Death = ${causeOfDeath}`);
         deathAges.push(ageOfDeath);
+        // Store cause of death in a dictionary with cause of death as key and count as value
+        if (listOfDeath[causeOfDeath]) {
+            listOfDeath[causeOfDeath] += 1;
+        } else {
+            listOfDeath[causeOfDeath] = 1;
+        }
     }
 
     // Restore the original functions
@@ -1040,6 +1054,9 @@ function runMultipleSimulations(numRuns) {
 
     // Plot the histogram of death ages
     plotMultiSimHistogram(deathAges);
+
+    // Plot the histogram of count of cause of death
+    plotMultiSimBarChartCOD(listOfDeath);
 }
 
 function resetSimulationState() {
