@@ -61,6 +61,7 @@ var recoExerciseLevel = 0; // -1 to 1
 var earlyRehabilitationTrigger = false; // Flag to track if early rehabilitation is triggered
 var retirementAge = 63;
 var rehabDuration = 0;
+var hasStage1Cancer = false;
 
 // ============== Death Initialization ==============
 var ageOfDeath_heartAttack = null;
@@ -497,7 +498,7 @@ function triggerLungCollapse(){
 }
 
 function triggerStroke() {
-    const survivalProbability = 0.7; 
+    const survivalProbability = 0.8; 
     if (Math.random() < survivalProbability) {
         alert("Stroke occurred! The patient survived.");
         
@@ -532,33 +533,32 @@ function cogDeclineByAge(age) {
     const t0 = 30;  // Inflection point (age at which cognitive decline starts increasing)
     return 1 / (1 + Math.exp(-r * (age - t0)));
 }
-function triggerCancer() {
-    const survivalProbability = 0.68; // 95% chance to survive
-    if (Math.random() < survivalProbability) {
-        alert("Patient has been diagnosed with Stage 1 cancer.");
+function triggerStage1Cancer() {
+    alert("Patient has been diagnosed with Stage 1 cancer.");
 
-        // Reduce life expectancy slightly
-        lifeExpectancy -= 5; // Decrease life expectancy by 5 years
+    // Reduce life expectancy slightly
+    lifeExpectancy -= 5; // Decrease life expectancy by 5 years
 
-        // Chance to reduce sticks per day to 1
-        if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
-            currentSticksPerDay = 1;
-            alert("The patient has drastically reduced smoking to 1 stick per day after the cancer diagnosis.");
-        } else {
-            alert("The patient continues smoking at the same rate.");
-        }
-
-        // Update health metrics and indicators
-        updateHeartHealth();
-        updateHealthIndicators();
+    // Chance to reduce sticks per day to 1
+    if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
+        currentSticksPerDay = 1;
+        alert("The patient has drastically reduced smoking to 1 stick per day after the cancer diagnosis.");
     } else {
-        stopSimulation();
-        ageOfDeath_cancer = currentAge;
-        ageOfDeath = ageOfDeath_cancer;
-        causeOfDeath = "Cancer";
-        alert("Patient has been diagnosed with Stage 4 cancer. The patient passed away soon after.");
-        resetSimulation();
+        alert("The patient continues smoking at the same rate.");
     }
+
+    // Update health metrics and indicators
+    updateHeartHealth();
+    updateHealthIndicators();
+}
+
+function triggerStage4Cancer() {
+    stopSimulation();
+    ageOfDeath_cancer = currentAge;
+    ageOfDeath = ageOfDeath_cancer;
+    causeOfDeath = "Cancer";
+    alert("Patient has been diagnosed with Stage 4 cancer. The patient passed away soon after.");
+    resetSimulation();
 }
 
 // Function to update number of cigs
@@ -602,6 +602,8 @@ function updateSticksPerDay() {
     if (startSmoking || currentSticksPerDay > 0) {
         // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
         let netChange = stressFactor + influenceEffect + lifeEventImpact; //need tweak life and cognitive 
+        netChange *= adjustedConsumptionFactor;
+        netChange *= publicSmokingMultiplier;
         // Apply change to current sticks per day
         newSticksPerDay += netChange;
     }
@@ -766,8 +768,6 @@ function simStep() {
 
     // Update sticks per day based on progression
     currentSticksPerDay = updateSticksPerDay();
-    currentSticksPerDay *= adjustedConsumptionFactor;
-    currentSticksPerDay *= publicSmokingMultiplier;
     currentSticksPerDay = Math.min(maxSticks, Math.max(0, currentSticksPerDay));
 
     if (currentSticksPerDay > 0) {
@@ -810,7 +810,12 @@ function simStep() {
     }
     if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
         console.log("Cancer Triggered: Risk =", cancerRisk);
-        triggerCancer();
+        if (!hasStage1Cancer) {
+            triggerStage1Cancer();
+            hasStage1Cancer = true;
+        } else {
+            triggerStage4Cancer();
+        }
     }
     var lungCapacity = getLungCapacity();
     // console.log("Lung Capacity",lungCapacity)
@@ -887,7 +892,7 @@ function resetSimulation() {
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
     currentSticksPerDay = 0; // Reset current sticks to initial value
-    currentAge = parseFloat(document.getElementById("age").value) || 12;
+    currentAge = 12;
     simulationYear = 0;
 
     // Reset the chart data
@@ -896,16 +901,14 @@ function resetSimulation() {
     }
 
     // Update displays
-    updateHeartHealth();
-    calculateLifeExpectancy();
+    // updateHeartHealth();
+    // calculateLifeExpectancy();
 
     // Update the chart with initial values
     if (window.updateLifeExpectancyChart) {
         updateLifeExpectancyChart(currentAge, lifeExpectancy);
     }
 
-    // Update displays
-    updateHeartHealth();
 }
 
 function stopSimulation() {
@@ -1080,7 +1083,7 @@ async function runMultipleSimulations(numRuns) {
 }
 
 function resetSimulationState() {
-    currentAge = parseFloat(document.getElementById("age").value) || 12;
+    currentAge = 12;
     simulationYear = 0;
     maxSticks = getMaxCigarettesForAge(currentAge);
     startSmoking = false;
@@ -1099,6 +1102,7 @@ function resetSimulationState() {
     cancerRisk = 0;
     currentSticksPerDay = 0;
     lifeExpectancy = calculateLifeExpectancy();
+    hasStage1Cancer = false;
     ageOfDeath = null;
     ageOfDeath_heartAttack = null;
     ageOfDeath_stroke = null;
