@@ -1,6 +1,6 @@
 import { initRespiratorySystem, respiratorySimStep, getLungCapacity, getTarAcc, resetRespiratorySystem, airParticles } from './respiratory.js';
-import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
-import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
+import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends} from './social_circle.js';
+import { updateMinSmokeAge, updateExerciseLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
 
 var animationDelay = 100; 
 var simTimer;
@@ -396,10 +396,7 @@ function updateHeartHealth() {
     if (currentAge < 50) { 
         strokeRisk = 1 / (1 + Math.exp(-0.5 * (bloodPressure - 5)));
     } else {
-        strokeRisk = Math.max(
-            1 / (1 + Math.exp(-0.005 * (bloodPressure - 60))),
-            1 / (1 + Math.exp(-0.003 * (bloodPressure - 60)))
-        );
+        strokeRisk = 1 / (1 + Math.exp(-0.005 * (bloodPressure - 60)));
     }
 
     // Calculate cancer risk: 0-100%, increases with blood pressure
@@ -505,7 +502,8 @@ function triggerStroke() {
         const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
         // Reduce life expectancy slightly
-        lifeExpectancy -= 4; // Decrease life expectancy by 4 years
+        lifeExpectancy -= 8; // Decrease life expectancy by 8 years
+        console.log("Life Expectancy after stroke deduction:", lifeExpectancy);
 
         // Chance to reduce sticks per day to 1
         if (neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
@@ -523,6 +521,7 @@ function triggerStroke() {
         ageOfDeath_stroke = currentAge;
         ageOfDeath = ageOfDeath_stroke;
         causeOfDeath = "Stroke";
+        console.log("Death due to stroke with life expectancy:", lifeExpectancy);
         alert("Stroke occurred! The patient did not survive.");
         resetSimulation();
     }
@@ -800,13 +799,14 @@ function simStep() {
     // Update health metrics
     updateHeartHealth();
 
-    if (heartAttackRisk > 0.3 && Math.random() < heartAttackRisk / 50) {
+    if (heartAttackRisk > 0.3 && Math.random() < heartAttackRisk / 40) {
         console.log("Heart Attack Triggered: Risk =", heartAttackRisk);
         triggerHeartAttack();
     }
-    if (strokeRisk > 0.3 && Math.random() < strokeRisk / 50) {
-        console.log("Stroke Triggered: Risk =", strokeRisk);
+    if (strokeRisk > 0.4 && Math.random() < strokeRisk / 40) {
+        console.log("Stroke Triggered: Risk =", strokeRisk, "Life Expectancy before trigger =", lifeExpectancy);
         triggerStroke();
+        console.log("Stroke Triggered: Risk =", strokeRisk, "Life Expectancy after trigger=", lifeExpectancy);
     }
     if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
         console.log("Cancer Triggered: Risk =", cancerRisk);
@@ -1009,6 +1009,28 @@ async function runMultipleSimulations(numRuns) {
         let heartAttackRiskAtDeath = 0;
         let strokeRiskAtDeath = 0;
         let lungCapacityAtDeath = 0;
+        let lifeExpectancyAtDeath = 0; // Variable to store life expectancy at the age of death
+        let experiencedConditions = []; // Track health conditions experienced
+
+        // Override health event triggers to track conditions
+        const originalTriggerHeartAttack = triggerHeartAttack;
+        const originalTriggerStroke = triggerStroke;
+        const originalTriggerStage1Cancer = triggerStage1Cancer;
+
+        triggerHeartAttack = function () {
+            experiencedConditions.push("Heart Attack");
+            originalTriggerHeartAttack.apply(this, arguments);
+        };
+
+        triggerStroke = function () {
+            experiencedConditions.push("Stroke");
+            originalTriggerStroke.apply(this, arguments);
+        };
+
+        triggerStage1Cancer = function () {
+            experiencedConditions.push("Stage 1 Cancer");
+            originalTriggerStage1Cancer.apply(this, arguments);
+        };
 
         while (ageOfDeath === null) {
             simulationYear += ageProgressionRate; // Increment simulation year
@@ -1020,6 +1042,7 @@ async function runMultipleSimulations(numRuns) {
             if (ageOfDeath === null) {
                 sticksAtDeath = currentSticksPerDay;
                 cancerRiskAtDeath = cancerRisk;
+                lifeExpectancyAtDeath = lifeExpectancy;
                 heartAttackRiskAtDeath = heartAttackRisk;
                 strokeRiskAtDeath = strokeRisk;
                 lungCapacityAtDeath = getLungCapacity();
@@ -1034,12 +1057,13 @@ async function runMultipleSimulations(numRuns) {
             i + 1, // Simulation Number
             ageOfDeath, // Age at Death
             causeOfDeath, // Cause of Death
-            lifeExpectancy.toFixed(1), // Life Expectancy
+            lifeExpectancyAtDeath.toFixed(1), // Life Expectancy
             sticksAtDeath.toFixed(1), // Sticks per Day at Age of Death
             (heartAttackRiskAtDeath * 100).toFixed(1) + "%", // Heart Attack Risk at Death
             (strokeRiskAtDeath * 100).toFixed(1) + "%", // Stroke Risk at Death
             (cancerRiskAtDeath * 100).toFixed(1) + "%", // Cancer Risk at Death
-            lungCapacityAtDeath.toFixed(1) + "%" // Lung Capacity at Death
+            lungCapacityAtDeath.toFixed(1) + "%", // Lung Capacity at Death
+            experiencedConditions.length > 0 ? `"${experiencedConditions.join(", ")}"` : "None" // Health conditions experienced in one cell
         ];
         simulationResults.push(result);
 
@@ -1049,6 +1073,11 @@ async function runMultipleSimulations(numRuns) {
         } else {
             listOfDeath[causeOfDeath] = 1;
         }
+
+        // Restore original health event triggers
+        triggerHeartAttack = originalTriggerHeartAttack;
+        triggerStroke = originalTriggerStroke;
+        triggerStage1Cancer = originalTriggerStage1Cancer;
 
         // Update the progress bar
         progressBar.value = i + 1;
@@ -1065,7 +1094,7 @@ async function runMultipleSimulations(numRuns) {
 
     // Add headers to the CSV data
     const csvData = [
-        ["Simulation Number", "Age at Death", "Cause of Death", "Life Expectancy", "Sticks per Day at Death", "Heart Attack Risk", "Stroke Risk", "Cancer Risk", "Lung Capacity"],
+        ["Simulation Number", "Age at Death", "Cause of Death", "Life Expectancy", "Sticks per Day at Death", "Heart Attack Risk", "Stroke Risk", "Cancer Risk", "Lung Capacity", "Health Conditions Experienced"],
         ...simulationResults
     ];
 
