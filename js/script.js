@@ -41,6 +41,9 @@ var exerciseFrequency = 3.8; // Frequency of exercise (day per week), assuming m
 var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
 var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
 
+var startSmokingAge = null; // Age when smoking starts
+var maxSticksAge = null; // Age when sticks per day is highest
+var maxSticksPerDay = 0; // Maximum sticks per day
 
 // ==================== Social Circle Initialization ====================
 // var familyInfluence = 0;
@@ -279,9 +282,13 @@ function updateInitialSticks() {
 
         // Randomly decide if the person starts smoking
         if (Math.random() < probability) {
-            currentSticksPerDay = 1; 
-            startSmoking = true; // Set the flag to true if smoking starts
+            currentSticksPerDay = 1;
+            if (!startSmoking) { // Check if this is the first time starting
+                startSmoking = true;
+                startSmokingAge = currentAge; // Set initial age if starting immediately
+            }
         }
+        
     } else {
         // Probability when there is no family influence
         const maxAge = 25;
@@ -301,11 +308,14 @@ function updateInitialSticks() {
         // console.log("Probability of starting smoking (without family influence):", probability);
 
         // Randomly decide if the person starts smoking
+        // In the else block (no family influence)
         if (Math.random() < probability) {
             currentSticksPerDay = 1;
-            startSmoking = true; // Set the flag to true if smoking starts
-        }
-    }
+            if (!startSmoking) { // Check if this is the first time starting
+                startSmoking = true;
+                startSmokingAge = currentAge; // Set initial age if starting immediately
+            }
+        }}
     calculateLifeExpectancy();
 }
 
@@ -389,7 +399,7 @@ function updateHeartHealth() {
     if (currentAge < 50) {
         heartAttackRisk = 1 / (1 + Math.exp(-0.08 * (heartStress - 50)));
     } else {
-        heartAttackRisk = Math.max(1 / (1 + Math.exp(-0.1 * (heartStress - 35))), 1 / (1 + Math.exp(-0.1 * (heartStress - 40))));
+        heartAttackRisk = Math.max(1 / (1 + Math.exp(-0.3 * (heartStress - 35))), 1 / (1 + Math.exp(-0.1 * (heartStress - 40))));
     }
 
     // Calculate stroke risk: 0-100%, increases with blood pressure
@@ -719,11 +729,26 @@ function updateSurface() {
 
 function simStep() {
     if (!isRunning) return;
+
     // Update simulation time and smoking habit
     simulationYear += ageProgressionRate;
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
 
     document.getElementById("age-value").textContent = currentAge.toFixed(0);
+
+    // After updating currentSticksPerDay in simStep()
+    if (currentSticksPerDay > 0 && !startSmoking) {
+        startSmoking = true;
+        startSmokingAge = currentAge; // Record the age when smoking starts
+        console.log("Smoking started at age:", startSmokingAge);
+    }
+
+    // Track the age and sticks per day when sticks per day is highest
+    if (currentSticksPerDay > maxSticksPerDay) {
+        maxSticksPerDay = currentSticksPerDay;
+        maxSticksAge = currentAge;
+        console.log("New max sticks per day:", maxSticksPerDay, "at age:", maxSticksAge);
+    }
 
     updatePublicSmokingBan(document.getElementById("public-smoking"));
 
@@ -851,6 +876,9 @@ function simStep() {
         causeOfDeath = "Natural Causes";
         return;
     }
+
+    console.log("Current Age:", currentAge, "Current Sticks Per Day:", currentSticksPerDay);
+    console.log("Start Smoking Age:", startSmokingAge, "Max Sticks Age:", maxSticksAge, "Max Sticks Per Day:", maxSticksPerDay);
 }
 
 // ==================== UI Atributes ====================
@@ -1052,6 +1080,13 @@ async function runMultipleSimulations(numRuns) {
         // Add the age of death to the array
         deathAges.push(ageOfDeath);
 
+        // Calculate the gradient
+        let gradient = "N/A"; // Default value if smoking never starts or max sticks is not recorded
+        if (startSmokingAge !== null && maxSticksAge !== null && maxSticksAge !== startSmokingAge) {
+            gradient = (maxSticksPerDay - 1) / (maxSticksAge - startSmokingAge); // Assuming 1 stick per day at start age
+            gradient = gradient.toFixed(2); // Round to 2 decimal places
+        }
+
         // Collect data for the current simulation
         const result = [
             i + 1, // Simulation Number
@@ -1063,7 +1098,8 @@ async function runMultipleSimulations(numRuns) {
             (strokeRiskAtDeath * 100).toFixed(1) + "%", // Stroke Risk at Death
             (cancerRiskAtDeath * 100).toFixed(1) + "%", // Cancer Risk at Death
             lungCapacityAtDeath.toFixed(1) + "%", // Lung Capacity at Death
-            experiencedConditions.length > 0 ? `"${experiencedConditions.join(", ")}"` : "None" // Health conditions experienced in one cell
+            experiencedConditions.length > 0 ? `"${experiencedConditions.join(", ")}"` : "None", // Health conditions experienced in one cell
+            gradient // Gradient between the two points
         ];
         simulationResults.push(result);
 
@@ -1094,7 +1130,7 @@ async function runMultipleSimulations(numRuns) {
 
     // Add headers to the CSV data
     const csvData = [
-        ["Simulation Number", "Age at Death", "Cause of Death", "Life Expectancy", "Sticks per Day at Death", "Heart Attack Risk", "Stroke Risk", "Cancer Risk", "Lung Capacity", "Health Conditions Experienced"],
+        ["Simulation Number", "Age at Death", "Cause of Death", "Life Expectancy", "Sticks per Day at Death", "Heart Attack Risk", "Stroke Risk", "Cancer Risk", "Lung Capacity", "Health Conditions Experienced", "Gradient"],
         ...simulationResults
     ];
 
@@ -1117,6 +1153,9 @@ function resetSimulationState() {
     maxSticks = getMaxCigarettesForAge(currentAge);
     startSmoking = false;
     isInRehab = false;
+    startSmokingAge = null; // Reset start smoking age
+    maxSticksAge = null; // Reset max sticks age
+    maxSticksPerDay = 0; 
     rehabAge = 0;
     rehabDuration = 0;
     addictionFactor = 0;
