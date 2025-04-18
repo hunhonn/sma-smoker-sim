@@ -26,16 +26,6 @@ function updateExerciseLevel(checkbox) {
     exerciseLevel = checkbox.checked;
 }
 
-function updateSugarLevel(value) {
-    sugarLevel = parseFloat(value);
-    updateSliderLabel(value, "reco-sugar-value");
-}
-
-function updateOilLevel(value) {
-    oilLevel = parseFloat(value);
-    updateSliderLabel(value, "reco-oil-value");
-}
-
 function updatePublicSmokingBan(checkbox) {
     if (checkbox.checked) {
         const tolerance = 1e-6; // Small tolerance for floating-point comparison
@@ -60,8 +50,6 @@ function updateImagePacks(checkbox){
 export {
     updateMinSmokeAge,
     updateExerciseLevel,
-    updateSugarLevel,
-    updateOilLevel,
     updateTaxLevel,
     updatePublicSmokingBan,
     publicSmokingMultiplier,
