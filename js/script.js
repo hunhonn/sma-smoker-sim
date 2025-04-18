@@ -1,4 +1,4 @@
-import { initRespiratorySystem, respiratorySimStep, getLungHealth, airParticles } from './respiratory.js';
+import { initRespiratorySystem, respiratorySimStep, getLungCapacity, getTarAcc, resetRespiratorySystem, airParticles } from './respiratory.js';
 import { socialInfluence, familyInfluence, lifeStressLevel, updateFamilyInfluence, updateLifeStressLevel, updateSmokerFriends, updateExIntLevel, updateExFreLevel} from './social_circle.js';
 import { updateMinSmokeAge, updateExerciseLevel, updateSugarLevel, updateOilLevel, updatePublicSmokingBan, updateTaxLevel, publicSmokingMultiplier, updateImagePacks} from './national_policy.js';
 
@@ -23,6 +23,7 @@ var cancerRisk = 0;
 var bloodPressure = 1;
 var heart_oxygen_level = 100;
 var heartStress = 0;
+
 // ==================== Parameter Initialization ====================
 var currentAge = 12;
 const baseLifeExpectancy = 83;
@@ -375,8 +376,9 @@ function updateHeartHealth() {
     var recoOilLevel = parseFloat(document.getElementById("reco-oil").value); // -1 to 1
     
 
-    const lungHealth = getLungHealth();
-    const lungCapacity = lungHealth ? lungHealth.capacity : 100;
+    var lungCapacity = getLungCapacity();
+    var tarAccumulation = getTarAcc();
+    // const lungCapacity = lungHealth ? lungHealth.capacity : 100;
 
     // Calculate blood pressure: 1.0 is normal
     // Increases by 0.1 per cigarette stick
@@ -447,7 +449,8 @@ function updateHealthIndicators() {
     // bloodPath.attr("stroke-width", 10 + (bloodPressure - 1) * 10)
     // .attr("stroke", d3.interpolateRgb("#BB2117", "#fe0204")(bloodPressure - 1));
 
-    var lungHealth = getLungHealth();
+    var lungCapacity = getLungCapacity();
+    var tarAccumulation = getTarAcc();
 
     // Display risk values in the insights panel
     var insights = document.getElementById("insights");
@@ -460,8 +463,8 @@ function updateHealthIndicators() {
             "<p>Heart Attack Risk: " + (heartAttackRisk * 100).toFixed(1) + "%</p>" +
             "<p>Stroke Risk: " + (strokeRisk * 100).toFixed(1) + "%</p>" +
             "<p>Cancer Risk: " + (cancerRisk * 100).toFixed(1) + "%</p>" +
-            "<p>Lung Capacity: " + lungHealth.capacity.toFixed(2) + "%</p>" +
-            "<p>Tar Accumulation: " + lungHealth.tarAccumulation.toFixed(1) + "%</p>" +
+            "<p>Lung Capacity: " + lungCapacity.toFixed(2) + "%</p>" +
+            "<p>Tar Accumulation: " + tarAccumulation.toFixed(1) + "%</p>" +
             "<p>Estimated Life Expectancy: " + lifeExpectancy.toFixed(1) + " years</p>" +
             "<p>Years of Life Lost: " + (baseLifeExpectancy - lifeExpectancy).toFixed(1) + "</p>";
     }
@@ -826,10 +829,11 @@ function simStep() {
         console.log("Cancer Triggered: Risk =", cancerRisk);
         triggerCancer();
     }
-    const lungHealth = getLungHealth();
-    if (lungHealth.capacity < 30) {
+    var lungCapacity = getLungCapacity();
+    var tarAccumulation = getTarAcc();
+    if (lungCapacity < 30) {
         lifeExpectancy -= 0.5;
-        if (lungHealth.capacity < 20 && Math.random() > lungHealth.capacity / 50) {
+        if (lungCapacity < 20 && Math.random() > lungCapacity / 50) {
             triggerLungCollapse();
         }
     }
@@ -856,6 +860,7 @@ function simStep() {
         stopSimulation();
         ageOfDeath_natural = currentAge;
         ageOfDeath = ageOfDeath_natural;
+        causeOfDeath = "Natural Causes";
         return;
     }
 }
@@ -1018,6 +1023,10 @@ function runMultipleSimulations(numRuns) {
             console.log(`Simulation ${i + 1}: Current Age = ${currentAge}, Life Expectancy = ${lifeExpectancy}, Age of Death = ${ageOfDeath}, heartAttack Risk = ${heartAttackRisk}, stroke Risk = ${strokeRisk}, cancer Risk = ${cancerRisk}`);
             // await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to the browser
         }
+        // print lung capacity and tar accumulation
+        var lungCapacity = getLungCapacity();
+        var tarAccumulation = getTarAcc();
+        console.log(`Lung Capacity = ${lungCapacity}, Tar Accumulation = ${tarAccumulation}`);
         // Record the age of death
         console.log(`Cause of Death = ${causeOfDeath}`);
         deathAges.push(ageOfDeath);
@@ -1061,9 +1070,10 @@ function resetSimulationState() {
     causeOfDeath = null;
     currentAgeRange = null;
     bloodCells = [];
+    resetRespiratorySystem(); // Reset the respiratory system state
     if (typeof airParticles !== "undefined") airParticles.length = 0;
-    if (typeof tarAccumulation !== "undefined") tarAccumulation = 0;
-    if (typeof lungCapacity !== "undefined") lungCapacity = 100;
+    // if (typeof tarAccumulation !== "undefined") tarAccumulation = 0;
+    // if (typeof lungCapacity !== "undefined") lungCapacity = 100;
     updateInitialSticks(); // <-- Ensure this is called last!
     currentSticksPerDay = initialSticksPerDay;
     console.log("resetSimulationState: ageOfDeath reset to", ageOfDeath, "currentAge:", currentAge, "sticks:", currentSticksPerDay);

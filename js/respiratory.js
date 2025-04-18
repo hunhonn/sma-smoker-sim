@@ -168,11 +168,27 @@ function updateRespiratorySystem() {
 
 
 // Function to get lung health metrics for displaying in UI
-function getLungHealth() {
-    return {
-        capacity: lungCapacity,
-        tarAccumulation: tarAccumulation
-    };
+function getLungCapacity() {
+    return lungCapacity;
+    // return {
+    //     capacity: lungCapacity,
+    //     tarAccumulation: tarAccumulation
+    // };
+}
+function getTarAcc() {
+    return tarAccumulation;
+    // return {
+    //     capacity: lungCapacity,
+    //     tarAccumulation: tarAccumulation
+    // };
+}
+
+function resetRespiratorySystem() {
+    // airParticles = []; // Clear air particles
+    tarAccumulation = 0; // Reset tar accumulation
+    lungCapacity = 100; // Reset lung capacity to 100%
+    // Clear visual representation if needed
+    // lungGroup.selectAll(".airParticle").remove();
 }
 
 // Export functions to be used in main script
@@ -180,7 +196,9 @@ export {
     initRespiratorySystem,
     respiratorySimStep,
     updateRespiratorySystem,
-    getLungHealth,
+    getLungCapacity,
+    getTarAcc,
+    resetRespiratorySystem,
     airParticles,
     tarAccumulation,
     lungCapacity
