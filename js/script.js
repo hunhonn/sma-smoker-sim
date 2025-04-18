@@ -969,10 +969,9 @@ function rehab() {
     updateHeartHealth();
     updateHealthIndicators();
 }
-
-function runMultipleSimulations(numRuns) {
+async function runMultipleSimulations(numRuns) {
     const deathAges = [];
-    // Initialise a dictionary to store the count of each cause of death
+    const simulationResults = []; // Array to store simulation results
     const listOfDeath = {
         "Heart Attack": 0,
         "Stroke": 0,
@@ -991,40 +990,60 @@ function runMultipleSimulations(numRuns) {
     updateSurface = function () {};
     updateCigaretteImage = function () {}; // No-op function
 
+    // Get the progress bar element
+    const progressBar = document.getElementById("simulationProgress");
+    progressBar.value = 0; // Reset progress bar
+    progressBar.max = numRuns; // Set the maximum value to the number of runs
+
     for (let i = 0; i < numRuns; i++) {
-        console.log(`Running simulation ${i + 1} of ${numRuns}..., ageofdeath: ${ageOfDeath}`);
+        console.log(`Running simulation ${i + 1} of ${numRuns}...`);
         isRunning = false; // Ensure simulation is not running
-        // Reset all global variables to their initial state
         resetSimulationState();
-        if(ageOfDeath !== null) {
-            ageOfDeath = null; // Reset age of death for each simulation
-        }
-    
-        maxSticks = getMaxCigarettesForAge(currentAge);
-        currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-        // console.log(`Before while loop: ageOfDeath = ${ageOfDeath}, currentAge = ${currentAge}, sticks = ${currentSticksPerDay}`);
-        // Run the simulation until death
+
+        let sticksAtDeath = 0; // Variable to store sticks per day at the age of death
+
         while (ageOfDeath === null) {
             simulationYear += ageProgressionRate; // Increment simulation year
             currentAge = parseFloat(document.getElementById("age").value) + simulationYear; // Update current age
-            isRunning = true; // Ensure simulation is not running
+            isRunning = true; // Ensure simulation is running
             simStep();
-            // console.log(`Simulation ${i + 1}: Current Age = ${currentAge}, Life Expectancy = ${lifeExpectancy}, Age of Death = ${ageOfDeath}, heartAttack Risk = ${heartAttackRisk}, stroke Risk = ${strokeRisk}, cancer Risk = ${cancerRisk}`);
-            // await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to the browser
+
+            // Capture sticks per day right before the simulation ends
+            if (ageOfDeath === null) {
+                sticksAtDeath = currentSticksPerDay;
+            }
         }
-        // print lung capacity and tar accumulation
-        var lungCapacity = getLungCapacity();
-        var tarAccumulation = getTarAcc();
-        // console.log(`Lung Capacity = ${lungCapacity}, Tar Accumulation = ${tarAccumulation}`);
-        // Record the age of death
-        console.log(`Simulation ${i+1} Cause of Death = ${causeOfDeath}`);
+
+        // Add the age of death to the array
         deathAges.push(ageOfDeath);
-        // Store cause of death in a dictionary with cause of death as key and count as value
+
+        // Collect data for the current simulation
+        const lungCapacity = getLungCapacity();
+        const result = [
+            i + 1, // Simulation Number
+            ageOfDeath, // Age at Death
+            causeOfDeath, // Cause of Death
+            lifeExpectancy.toFixed(1), // Life Expectancy
+            sticksAtDeath.toFixed(1), // Sticks per Day at Age of Death
+            (heartAttackRisk * 100).toFixed(1) + "%", // Heart Attack Risk
+            (strokeRisk * 100).toFixed(1) + "%", // Stroke Risk
+            (cancerRisk * 100).toFixed(1) + "%", // Cancer Risk
+            lungCapacity.toFixed(1) + "%" // Lung Capacity
+        ];
+        simulationResults.push(result);
+
+        // Record the cause of death
         if (listOfDeath[causeOfDeath]) {
             listOfDeath[causeOfDeath] += 1;
         } else {
             listOfDeath[causeOfDeath] = 1;
         }
+
+        // Update the progress bar
+        progressBar.value = i + 1;
+
+        // Allow the browser to update the DOM
+        await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     // Restore the original functions
@@ -1033,11 +1052,23 @@ function runMultipleSimulations(numRuns) {
     updateCigaretteImage = originalUpdateCigaretteImage;
     updateSurface = originalUpdateSurface;
 
+    // Add headers to the CSV data
+    const csvData = [
+        ["Simulation Number", "Age at Death", "Cause of Death", "Life Expectancy", "Sticks per Day at Death", "Heart Attack Risk", "Stroke Risk", "Cancer Risk", "Lung Capacity"],
+        ...simulationResults
+    ];
+
+    // Export the CSV file
+    exportToCSV(csvData, "Multiple Simulation Results.csv");
+
     // Plot the histogram of death ages
     plotMultiSimHistogram(deathAges);
 
     // Plot the histogram of count of cause of death
     plotMultiSimBarChartCOD(listOfDeath);
+
+    // Reset the progress bar after completion
+    progressBar.value = 0;
 }
 
 function resetSimulationState() {
@@ -1073,6 +1104,19 @@ function resetSimulationState() {
     if (typeof airParticles !== "undefined") airParticles.length = 0;
     updateInitialSticks();
     console.log("resetSimulationState: ageOfDeath reset to", ageOfDeath, "currentAge:", currentAge, "sticks:", currentSticksPerDay);
+}
+
+function exportToCSV(data, filename) {
+    const csvContent = data.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 export {

@@ -65,6 +65,26 @@
     overflow: auto;
 }
 
+#simulation-progress-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+#simulationProgress {
+    width: 100%;
+    height: 20px;
+    appearance: none;
+}
+
+#simulationProgress::-webkit-progress-bar {
+    background-color: #e0e0e0;
+    border-radius: 10px;
+}
+
+#simulationProgress::-webkit-progress-value {
+    background-color: #4caf50;
+    border-radius: 10px;
+}
 #status-table{
     height: 28%;
     margin-top: 1em;
