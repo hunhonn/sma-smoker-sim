@@ -30,8 +30,7 @@ const baseLifeExpectancy = 83;
 var lifeExpectancy = 80;
 var ageProgressionRate = 0.1; // how much age increases per step
 var simulationYear = 0; // Years elapsed in simulation
-var initialSticksPerDay = 0; // Store initial value
-var currentSticksPerDay;
+var currentSticksPerDay =0;
 var maxSticks = 0;
 var startSmoking = false; // Flag to track if smoking starts
 var isInRehab = false; // Flag to track if in rehab
@@ -254,7 +253,7 @@ function updateInitialAge() {
 }
 
 function updateInitialSticks() {
-    initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
+
 
     const age = parseFloat(document.getElementById("age").value) || 12;
     const legalAge = parseFloat(document.getElementById("min-age").value) || 21;
@@ -279,10 +278,8 @@ function updateInitialSticks() {
 
         // Randomly decide if the person starts smoking
         if (Math.random() < probability) {
-            initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0);
+            currentSticksPerDay = 1; 
             startSmoking = true; // Set the flag to true if smoking starts
-        } else {
-            initialSticksPerDay = 0; // No smoking if the random chance fails
         }
     } else {
         // Probability when there is no family influence
@@ -304,14 +301,10 @@ function updateInitialSticks() {
 
         // Randomly decide if the person starts smoking
         if (Math.random() < probability) {
-            initialSticksPerDay = Math.max(1, parseFloat(document.getElementById("sticks_a_day").value) || 0); //maybe need to remove the document.getElementById as not used anymore.
+            currentSticksPerDay = 1;
             startSmoking = true; // Set the flag to true if smoking starts
-        } else {
-            initialSticksPerDay = 0; // No smoking if the random chance fails
         }
     }
-
-    currentSticksPerDay = initialSticksPerDay;
     calculateLifeExpectancy();
 }
 
@@ -325,15 +318,11 @@ function calculateLifeExpectancy() {
     // Base life expectancy (for non-smokers)
 
 
-    // Each cigarette per day reduces life expectancy
-    // Research shows heavy smoking (20+ cigarettes/day) can reduce life by 10+ years
-    const currentSticks = getCurrentSticks();
-
     // Start with basic reduction: Each stick reduces life by 20 minutes
-    let yearsReduced = currentSticks * (20 / 525600);
+    let yearsReduced = currentSticksPerDay * (20 / 525600);
 
     // Additional reduction for smoking after age 40
-    if (currentAge > 40 && currentSticks > 0) {
+    if (currentAge > 40 && currentSticksPerDay > 0) {
         const yearsSmokingAfter40 = Math.min(simulationYear, currentAge - 40);
         if (yearsSmokingAfter40 > 0) {
             // 0.25 years (3 months) per year smoking after 40
@@ -342,7 +331,7 @@ function calculateLifeExpectancy() {
     }
 
     // Cap reduction based on smoking intensity (10 years for pack-a-day)
-    const maxReduction = 10 * (currentSticks / 20);
+    const maxReduction = 10 * (currentSticksPerDay / 20);
     yearsReduced = Math.min(yearsReduced, maxReduction);
 
     // Calculate final life expectancy
@@ -360,16 +349,11 @@ function calculateLifeExpectancy() {
     return lifeExpectancy;
 }
 
-// Get current number of cigarettes per day based on simulation progression
-function getCurrentSticks() {
-    return isRunning ? currentSticksPerDay : initialSticksPerDay;
+function getCurrentSticks(){
+    return currentSticksPerDay
 }
 
 function updateHeartHealth() {
-    // Use the tracked value when simulation is running, otherwise use input value
-    var sticksPerDay = isRunning ? currentSticksPerDay :
-        parseFloat(document.getElementById("sticks_a_day").value) || 0;
-
     // Currently sugar intake = government recommended sugar intake
     var cholesterol = 0;
     var recoSugarLevel = parseFloat(document.getElementById("reco-sugar").value); // -1 to 1
@@ -383,11 +367,11 @@ function updateHeartHealth() {
     // Increases by 0.1 per cigarette stick
     // Increases/decreases by sugar level (0.5 is normal)
     cholesterol = recoOilLevel * 0.1; // Assuming oil level is a proxy for cholesterol
-    bloodPressure = 1 + (sticksPerDay * 0.1) + (recoSugarLevel - 0.5) + (cholesterol - 0.5);
+    bloodPressure = 1 + (currentSticksPerDay * 0.1) + (recoSugarLevel - 0.5) + (cholesterol - 0.5);
 
 
     // Combined impact (weighted to prioritize lung capacity)
-    heart_oxygen_level = 100 - (sticksPerDay * 0.2) - ((100 - lungCapacity) * 0.3);
+    heart_oxygen_level = 100 - (currentSticksPerDay * 0.2) - ((100 - lungCapacity) * 0.3);
 
     // Ensure oxygen level stays within realistic bounds
     heart_oxygen_level = Math.min(100, Math.max(70, heart_oxygen_level));
@@ -419,11 +403,11 @@ function updateHeartHealth() {
 
     // Calculate cancer risk: 0-100%, increases with blood pressure
     if (currentAge < 40) { 
-        cancerRisk = 1 / (1 + Math.exp(-0.05 * (sticksPerDay - 80)));
+        cancerRisk = 1 / (1 + Math.exp(-0.05 * (currentSticksPerDay - 80)));
     } else {
         cancerRisk = Math.max(
-            1 / (1 + Math.exp(-0.07 * (sticksPerDay - 30))),
-            1 / (1 + Math.exp(-0.05 * (sticksPerDay - 30)))
+            1 / (1 + Math.exp(-0.07 * (currentSticksPerDay - 30))),
+            1 / (1 + Math.exp(-0.05 * (currentSticksPerDay - 30)))
         );
     }
 
@@ -513,14 +497,14 @@ function triggerLungCollapse(){
 }
 
 function triggerStroke() {
-    const survivalProbability = 0.5; // 50% chance to survive
+    const survivalProbability = 0.7; 
     if (Math.random() < survivalProbability) {
         alert("Stroke occurred! The patient survived.");
         
         const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
         // Reduce life expectancy slightly
-        lifeExpectancy -= 2; // Decrease life expectancy by 2 years
+        lifeExpectancy -= 4; // Decrease life expectancy by 4 years
 
         // Chance to reduce sticks per day to 1
         if (neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
@@ -615,7 +599,7 @@ function updateSticksPerDay() {
     }
     
     // Check if person started smoking
-    if (startSmoking || initialSticksPerDay > 0) {
+    if (startSmoking || currentSticksPerDay > 0) {
         // Calculate net change, reduced by addiction (addiction makes it harder to reduce)
         let netChange = stressFactor + influenceEffect + lifeEventImpact; //need tweak life and cognitive 
         // Apply change to current sticks per day
@@ -646,7 +630,7 @@ function getMaxCigarettesForAge(age) {
         mean = 15;
         stdDev = 3; // Example: 95% CI ~ [9, 21]
     } else if (age < 45) {
-        mean = 15;
+        mean = 18;
         stdDev = 3; // Example: 95% CI ~ [9, 21]
     } else if (age < 55) {
         mean = 16;
@@ -873,7 +857,6 @@ function startSimulation() {
             maxSticks = getMaxCigarettesForAge(currentAge);
             currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         }
-        // initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
         maxSticks = getMaxCigarettesForAge(currentAge);
 
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
@@ -903,8 +886,7 @@ function resetSimulation() {
     // Reset simulation values
     bloodCells = [];
     svg.selectAll(".bloodCell").remove();
-    initialSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-    currentSticksPerDay = initialSticksPerDay; // Reset current sticks to initial value
+    currentSticksPerDay = 0; // Reset current sticks to initial value
     currentAge = parseFloat(document.getElementById("age").value) || 12;
     simulationYear = 0;
 
@@ -1076,6 +1058,7 @@ function resetSimulationState() {
     heartAttackRisk = 0;
     strokeRisk = 0;
     cancerRisk = 0;
+    currentSticksPerDay = 0;
     lifeExpectancy = calculateLifeExpectancy();
     ageOfDeath = null;
     ageOfDeath_heartAttack = null;
@@ -1089,14 +1072,13 @@ function resetSimulationState() {
     resetRespiratorySystem(); // Reset the respiratory system state
     if (typeof airParticles !== "undefined") airParticles.length = 0;
     updateInitialSticks();
-    currentSticksPerDay = initialSticksPerDay;
     console.log("resetSimulationState: ageOfDeath reset to", ageOfDeath, "currentAge:", currentAge, "sticks:", currentSticksPerDay);
 }
 
 export {
-    getCurrentSticks,
     startSimulation,
     resetSimulation,
+    getCurrentSticks,
     updateHeartHealth,
     updateSliderLabel,
     startSmoking,
