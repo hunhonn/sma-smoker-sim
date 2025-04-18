@@ -71,6 +71,7 @@ var ageOfDeath_lungCollapse = null;
 var ageOfDeath_natural = null;
 var ageOfDeath = null;
 var causeOfDeath = null; // Variable to store the cause of death
+var experiencedConditions = []; // Array to store experienced conditions
 
 // ==================== Initialization ====================
 
@@ -456,6 +457,7 @@ function updateHealthIndicators() {
 }
 
 function triggerHeartAttack() {
+    experiencedConditions.push("Heart Attack");
     const survivalProbability = 0.5; // 50% chance to survive
     if (Math.random() < survivalProbability) {
         alert("Heart attack occurred! The patient survived.");
@@ -496,6 +498,7 @@ function triggerLungCollapse(){
 
 function triggerStroke() {
     const survivalProbability = 0.8; 
+    experiencedConditions.push("Stroke");
     if (Math.random() < survivalProbability) {
         alert("Stroke occurred! The patient survived.");
         
@@ -533,6 +536,7 @@ function cogDeclineByAge(age) {
     return 1 / (1 + Math.exp(-r * (age - t0)));
 }
 function triggerStage1Cancer() {
+    experiencedConditions.push("Stage 1 Cancer");
     alert("Patient has been diagnosed with Stage 1 cancer.");
 
     // Reduce life expectancy slightly
@@ -804,9 +808,9 @@ function simStep() {
         triggerHeartAttack();
     }
     if (strokeRisk > 0.4 && Math.random() < strokeRisk / 40) {
-        console.log("Stroke Triggered: Risk =", strokeRisk, "Life Expectancy before trigger =", lifeExpectancy);
+        console.log("Pre Stroke Triggered: Risk =", strokeRisk, "Life Expectancy before trigger =", lifeExpectancy);
         triggerStroke();
-        console.log("Stroke Triggered: Risk =", strokeRisk, "Life Expectancy after trigger=", lifeExpectancy);
+        console.log("Post Stroke Triggered: Risk =", strokeRisk, "Life Expectancy after trigger=", lifeExpectancy);
     }
     if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
         console.log("Cancer Triggered: Risk =", cancerRisk);
@@ -1010,27 +1014,27 @@ async function runMultipleSimulations(numRuns) {
         let strokeRiskAtDeath = 0;
         let lungCapacityAtDeath = 0;
         let lifeExpectancyAtDeath = 0; // Variable to store life expectancy at the age of death
-        let experiencedConditions = []; // Track health conditions experienced
+        // let experiencedConditions = []; // Track health conditions experienced
 
         // Override health event triggers to track conditions
-        const originalTriggerHeartAttack = triggerHeartAttack;
-        const originalTriggerStroke = triggerStroke;
-        const originalTriggerStage1Cancer = triggerStage1Cancer;
+        // const originalTriggerHeartAttack = triggerHeartAttack;
+        // const originalTriggerStroke = triggerStroke;
+        // const originalTriggerStage1Cancer = triggerStage1Cancer;
 
-        triggerHeartAttack = function () {
-            experiencedConditions.push("Heart Attack");
-            originalTriggerHeartAttack.apply(this, arguments);
-        };
+        // triggerHeartAttack = function () {
+            
+        //     originalTriggerHeartAttack.apply(this, arguments);
+        // };
 
-        triggerStroke = function () {
-            experiencedConditions.push("Stroke");
-            originalTriggerStroke.apply(this, arguments);
-        };
+        // triggerStroke = function () {
+        //     experiencedConditions.push("Stroke");
+        //     originalTriggerStroke.apply(this, arguments);
+        // };
 
-        triggerStage1Cancer = function () {
-            experiencedConditions.push("Stage 1 Cancer");
-            originalTriggerStage1Cancer.apply(this, arguments);
-        };
+        // triggerStage1Cancer = function () {
+        //     experiencedConditions.push("Stage 1 Cancer");
+        //     originalTriggerStage1Cancer.apply(this, arguments);
+        // };
 
         while (ageOfDeath === null) {
             simulationYear += ageProgressionRate; // Increment simulation year
@@ -1075,9 +1079,9 @@ async function runMultipleSimulations(numRuns) {
         }
 
         // Restore original health event triggers
-        triggerHeartAttack = originalTriggerHeartAttack;
-        triggerStroke = originalTriggerStroke;
-        triggerStage1Cancer = originalTriggerStage1Cancer;
+        // triggerHeartAttack = originalTriggerHeartAttack;
+        // triggerStroke = originalTriggerStroke;
+        // triggerStage1Cancer = originalTriggerStage1Cancer;
 
         // Update the progress bar
         progressBar.value = i + 1;
@@ -1141,6 +1145,7 @@ function resetSimulationState() {
     causeOfDeath = null;
     currentAgeRange = null;
     bloodCells = [];
+    experiencedConditions = []; // Track health conditions experienced
     resetRespiratorySystem(); // Reset the respiratory system state
     if (typeof airParticles !== "undefined") airParticles.length = 0;
     updateInitialSticks();
