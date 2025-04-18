@@ -69,6 +69,7 @@ var ageOfDeath_cancer = null;
 var ageOfDeath_lungCollapse = null;
 var ageOfDeath_natural = null;
 var ageOfDeath = null;
+var causeOfDeath = null; // Variable to store the cause of death
 
 // ==================== Initialization ====================
 
@@ -496,6 +497,7 @@ function triggerHeartAttack() {
         document.getElementById("StartORPause").textContent = "Start";
         ageOfDeath_heartAttack = currentAge;
         ageOfDeath = ageOfDeath_heartAttack;
+        causeOfDeath = "Heart Attack";
         alert("Heart attack occurred! The patient did not survive.");
         resetSimulation();
     }
@@ -505,6 +507,7 @@ function triggerLungCollapse(){
     stopSimulation();
     ageOfDeath_lungCollapse = currentAge;
     ageOfDeath = ageOfDeath_lungCollapse;
+    causeOfDeath = "Lung Collapse";
     alert("The patient had died from lung collapse.");
     resetSimulation();
 }
@@ -532,6 +535,7 @@ function triggerStroke() {
         stopSimulation();
         ageOfDeath_stroke = currentAge;
         ageOfDeath = ageOfDeath_stroke;
+        causeOfDeath = "Stroke";
         alert("Stroke occurred! The patient did not survive.");
         resetSimulation();
     }
@@ -565,6 +569,7 @@ function triggerCancer() {
         stopSimulation();
         ageOfDeath_cancer = currentAge;
         ageOfDeath = ageOfDeath_cancer;
+        causeOfDeath = "Cancer";
         alert("Patient has been diagnosed with Stage 4 cancer. The patient passed away soon after.");
         resetSimulation();
     }
@@ -1014,6 +1019,7 @@ function runMultipleSimulations(numRuns) {
             // await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to the browser
         }
         // Record the age of death
+        console.log(`Cause of Death = ${causeOfDeath}`);
         deathAges.push(ageOfDeath);
     }
 
@@ -1052,6 +1058,7 @@ function resetSimulationState() {
     ageOfDeath_cancer = null;
     ageOfDeath_lungCollapse = null;
     ageOfDeath_natural = null;
+    causeOfDeath = null;
     currentAgeRange = null;
     bloodCells = [];
     if (typeof airParticles !== "undefined") airParticles.length = 0;
