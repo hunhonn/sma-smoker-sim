@@ -113,7 +113,7 @@ function updateLungHealth() {
     }
 
     // Lung capacity decreases with tar accumulation
-    lungCapacity = 100 - (tarAccumulation*1.5);
+    lungCapacity = 100 - (tarAccumulation*2.4);
 
     // Cap tar accumulation at 100%
     tarAccumulation = Math.min(100, tarAccumulation);

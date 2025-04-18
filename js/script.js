@@ -410,7 +410,8 @@ function updateHeartHealth() {
     if (currentAge < 50) { 
         strokeRisk = 1 / (1 + Math.exp(-0.5 * (bloodPressure - 5)));
     } else {
-        strokeRisk = 1 / (1 + Math.exp(-0.005 * (bloodPressure - 60)));
+        // strokeRisk = 1 / (1 + Math.exp(-1.1 * (bloodPressure - 3)));
+        strokeRisk = 1 / (1 + Math.exp(-0.95 * (bloodPressure - 3)));
     }
 
     // Calculate cancer risk: 0-100%, increases with blood pressure
@@ -836,7 +837,7 @@ function simStep() {
         console.log("Heart Attack Triggered: Risk =", heartAttackRisk);
         triggerHeartAttack();
     }
-    if (strokeRisk > 0.4 && Math.random() < strokeRisk / 40) {
+    if (strokeRisk > 0.2 && Math.random() < strokeRisk / 10) {
         console.log("Pre Stroke Triggered: Risk =", strokeRisk, "Life Expectancy before trigger =", lifeExpectancy);
         triggerStroke();
         console.log("Post Stroke Triggered: Risk =", strokeRisk, "Life Expectancy after trigger=", lifeExpectancy);
