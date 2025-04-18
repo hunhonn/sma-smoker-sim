@@ -969,6 +969,7 @@ function rehab() {
     updateHeartHealth();
     updateHealthIndicators();
 }
+
 async function runMultipleSimulations(numRuns) {
     const deathAges = [];
     const simulationResults = []; // Array to store simulation results
@@ -1001,6 +1002,10 @@ async function runMultipleSimulations(numRuns) {
         resetSimulationState();
 
         let sticksAtDeath = 0; // Variable to store sticks per day at the age of death
+        let cancerRiskAtDeath = 0;
+        let heartAttackRiskAtDeath = 0;
+        let strokeRiskAtDeath = 0;
+        let lungCapacityAtDeath = 0;
 
         while (ageOfDeath === null) {
             simulationYear += ageProgressionRate; // Increment simulation year
@@ -1008,9 +1013,13 @@ async function runMultipleSimulations(numRuns) {
             isRunning = true; // Ensure simulation is running
             simStep();
 
-            // Capture sticks per day right before the simulation ends
+            // Capture values right before the simulation ends
             if (ageOfDeath === null) {
                 sticksAtDeath = currentSticksPerDay;
+                cancerRiskAtDeath = cancerRisk;
+                heartAttackRiskAtDeath = heartAttackRisk;
+                strokeRiskAtDeath = strokeRisk;
+                lungCapacityAtDeath = getLungCapacity();
             }
         }
 
@@ -1018,17 +1027,16 @@ async function runMultipleSimulations(numRuns) {
         deathAges.push(ageOfDeath);
 
         // Collect data for the current simulation
-        const lungCapacity = getLungCapacity();
         const result = [
             i + 1, // Simulation Number
             ageOfDeath, // Age at Death
             causeOfDeath, // Cause of Death
             lifeExpectancy.toFixed(1), // Life Expectancy
             sticksAtDeath.toFixed(1), // Sticks per Day at Age of Death
-            (heartAttackRisk * 100).toFixed(1) + "%", // Heart Attack Risk
-            (strokeRisk * 100).toFixed(1) + "%", // Stroke Risk
-            (cancerRisk * 100).toFixed(1) + "%", // Cancer Risk
-            lungCapacity.toFixed(1) + "%" // Lung Capacity
+            (heartAttackRiskAtDeath * 100).toFixed(1) + "%", // Heart Attack Risk at Death
+            (strokeRiskAtDeath * 100).toFixed(1) + "%", // Stroke Risk at Death
+            (cancerRiskAtDeath * 100).toFixed(1) + "%", // Cancer Risk at Death
+            lungCapacityAtDeath.toFixed(1) + "%" // Lung Capacity at Death
         ];
         simulationResults.push(result);
 
