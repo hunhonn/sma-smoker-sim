@@ -1,5 +1,6 @@
 // Chart.js-based visualization controller
 let multiSimHistogramChart;
+let multiSimBarChartCOD;
 let lifeExpectancyChart;
 let chartData = {
     labels: [], // X-axis (ages)
@@ -116,7 +117,43 @@ function plotMultiSimHistogram(deathAges) {
     });
 }
 
+function plotMultiSimBarChartCOD(listOfDeath) {
+    
+    const labels = Object.keys(listOfDeath);
+    const data = Object.values(listOfDeath);
+
+    if (multiSimBarChartCOD) {
+        multiSimBarChartCOD.destroy();
+    }
+    const ctx = document.getElementById('multiSimBarChartCOD').getContext('2d');
+    multiSimBarchartCOD = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Count of Cause of Death',
+                data: data,
+                backgroundColor: 'rgba(187,33,23,0.5)'
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribution of Cause of Death (Multiple Simulations)'
+                }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Cause of Death' } },
+                y: { title: { display: true, text: 'Count' } }
+            }
+        }
+    });
+}
+
 // Export functions
 window.initCharts = initCharts;
 window.updateLifeExpectancyChart = updateLifeExpectancyChart;
 window.plotMultiSimHistogram = plotMultiSimHistogram;
+window.plotMultiSimBarChartCOD = plotMultiSimBarChartCOD;
