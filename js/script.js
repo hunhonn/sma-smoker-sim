@@ -969,8 +969,7 @@ function rehab() {
     updateHeartHealth();
     updateHealthIndicators();
 }
-
-function runMultipleSimulations(numRuns) {
+async function runMultipleSimulations(numRuns) {
     const deathAges = [];
     const simulationResults = []; // Array to store simulation results
     const listOfDeath = {
@@ -991,6 +990,11 @@ function runMultipleSimulations(numRuns) {
     updateSurface = function () {};
     updateCigaretteImage = function () {}; // No-op function
 
+    // Get the progress bar element
+    const progressBar = document.getElementById("simulationProgress");
+    progressBar.value = 0; // Reset progress bar
+    progressBar.max = numRuns; // Set the maximum value to the number of runs
+
     for (let i = 0; i < numRuns; i++) {
         console.log(`Running simulation ${i + 1} of ${numRuns}...`);
         isRunning = false; // Ensure simulation is not running
@@ -1009,6 +1013,9 @@ function runMultipleSimulations(numRuns) {
                 sticksAtDeath = currentSticksPerDay;
             }
         }
+
+        // Add the age of death to the array
+        deathAges.push(ageOfDeath);
 
         // Collect data for the current simulation
         const lungCapacity = getLungCapacity();
@@ -1031,6 +1038,12 @@ function runMultipleSimulations(numRuns) {
         } else {
             listOfDeath[causeOfDeath] = 1;
         }
+
+        // Update the progress bar
+        progressBar.value = i + 1;
+
+        // Allow the browser to update the DOM
+        await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     // Restore the original functions
@@ -1053,6 +1066,9 @@ function runMultipleSimulations(numRuns) {
 
     // Plot the histogram of count of cause of death
     plotMultiSimBarChartCOD(listOfDeath);
+
+    // Reset the progress bar after completion
+    progressBar.value = 0;
 }
 
 function resetSimulationState() {
