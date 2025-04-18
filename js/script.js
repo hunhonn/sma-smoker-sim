@@ -36,6 +36,9 @@ var startSmoking = false; // Flag to track if smoking starts
 var isInRehab = false; // Flag to track if in rehab
 var currentAgeRange = null;
 var rehabAge = 0;
+var yearsReducedfromStroke = 0; // Years reduced from stroke
+var yearsReducedfromHeartAttack = 0;
+var yearsReducedfromCancer = 5;
 
 var exerciseFrequency = 3.8; // Frequency of exercise (day per week), assuming max 1hr per day
 var exerciseIntensity = 5; // Intensity of exercise (1-10 scale) 
@@ -347,16 +350,16 @@ function calculateLifeExpectancy() {
     yearsReduced = Math.min(yearsReduced, maxReduction);
 
     // Calculate final life expectancy
-    lifeExpectancy = baseLifeExpectancy - yearsReduced;
+    lifeExpectancy = baseLifeExpectancy - yearsReduced - yearsReducedfromStroke - yearsReducedfromHeartAttack - yearsReducedfromCancer;
 
     // Set upper and lower bounds
     // Upper bound: non-smokers could live up to 90
-    const upperBound = baseLifeExpectancy + 7;
-    // Lower bound: heavy smokers won't go below 60
-    const lowerBound = Math.max(60, currentAge);
+    // const upperBound = baseLifeExpectancy + 7;
+    // // Lower bound: heavy smokers won't go below 60
+    // const lowerBound = Math.max(60, currentAge);
 
     // Apply bounds
-    lifeExpectancy = Math.min(upperBound, Math.max(lowerBound, lifeExpectancy));
+    // lifeExpectancy = Math.min(upperBound, Math.max(lowerBound, lifeExpectancy));
 
     return lifeExpectancy;
 }
@@ -473,7 +476,7 @@ function triggerHeartAttack() {
         alert("Heart attack occurred! The patient survived.");
 
         // Reduce life expectancy slightly
-        lifeExpectancy -= 2; // Decrease life expectancy by 1 year
+        yearsReducedfromHeartAttack += 2; // Decrease life expectancy by 1 year
 
         // Chance to reduce sticks per day to 1
         if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
@@ -515,8 +518,8 @@ function triggerStroke() {
         const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
         // Reduce life expectancy slightly
-        lifeExpectancy -= 8; // Decrease life expectancy by 8 years
-        console.log("Life Expectancy after stroke deduction:", lifeExpectancy);
+        yearsReducedfromStroke += 8; // Decrease life expectancy by 8 years
+        // console.log("Life Expectancy after stroke deduction:", lifeExpectancy);
 
         // Chance to reduce sticks per day to 1
         if (neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
@@ -550,7 +553,7 @@ function triggerStage1Cancer() {
     alert("Patient has been diagnosed with Stage 1 cancer.");
 
     // Reduce life expectancy slightly
-    lifeExpectancy -= 5; // Decrease life expectancy by 5 years
+    yearsReducedfromCancer += 5; // Decrease life expectancy by 5 years
 
     // Chance to reduce sticks per day to 1
     if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
@@ -739,6 +742,7 @@ function simStep() {
     currentAge = parseFloat(document.getElementById("age").value) + simulationYear;
 
     document.getElementById("age-value").textContent = currentAge.toFixed(0);
+    console.log(currentAge.toFixed(0));
 
     // After updating currentSticksPerDay in simStep()
     if (currentSticksPerDay > 0 && !startSmoking) {
@@ -848,11 +852,8 @@ function simStep() {
     }
     var lungCapacity = getLungCapacity();
     // console.log("Lung Capacity",lungCapacity)
-    if (lungCapacity < 30) {
-        lifeExpectancy -= 0.5;
-        if (lungCapacity < 20 && Math.random() > lungCapacity / 50) {
-            triggerLungCollapse();
-        }
+    if (lungCapacity < 20 && Math.random() > lungCapacity / 50) {
+        triggerLungCollapse();
     }
 
     respiratorySimStep(isRunning, currentSticksPerDay);
@@ -1173,6 +1174,9 @@ function resetSimulationState() {
     strokeRisk = 0;
     cancerRisk = 0;
     currentSticksPerDay = 0;
+    yearsReducedfromStroke = 0;
+    yearsReducedfromHeartAttack = 0;
+    yearsReducedfromCancer = 5;
     lifeExpectancy = calculateLifeExpectancy();
     hasStage1Cancer = false;
     ageOfDeath = null;
