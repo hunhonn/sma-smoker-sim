@@ -113,7 +113,7 @@ function updateLungHealth() {
     }
 
     // Lung capacity decreases with tar accumulation
-    lungCapacity = 100 - tarAccumulation;
+    lungCapacity = 100 - (tarAccumulation*1.5);
 
     // Cap tar accumulation at 100%
     tarAccumulation = Math.min(100, tarAccumulation);
@@ -170,17 +170,9 @@ function updateRespiratorySystem() {
 // Function to get lung health metrics for displaying in UI
 function getLungCapacity() {
     return lungCapacity;
-    // return {
-    //     capacity: lungCapacity,
-    //     tarAccumulation: tarAccumulation
-    // };
 }
 function getTarAcc() {
     return tarAccumulation;
-    // return {
-    //     capacity: lungCapacity,
-    //     tarAccumulation: tarAccumulation
-    // };
 }
 
 function resetRespiratorySystem() {

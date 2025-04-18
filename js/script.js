@@ -51,7 +51,7 @@ var exercise = exerciseFrequency * exerciseIntensity; // Total exercise level
 var addictionFactor = 0; // 0 - 480 mg
 var withdrawal_severity =0; // 0 to 1
 var cognitive_decline = 0;  // 0 to 1
-var Neuroplasticity=0; // 0 to 1
+var neuroplasticity=0; // 0 to 1
 var intelligenceFromPacks = 1; // 0.2 or 0.5
 // ==================== Govt Intervention Initialization ====================
 var recoSugarLevel = 0; // -1 to 1
@@ -377,7 +377,6 @@ function updateHeartHealth() {
     
 
     var lungCapacity = getLungCapacity();
-    var tarAccumulation = getTarAcc();
     // const lungCapacity = lungHealth ? lungHealth.capacity : 100;
 
     // Calculate blood pressure: 1.0 is normal
@@ -386,11 +385,9 @@ function updateHeartHealth() {
     cholesterol = recoOilLevel * 0.1; // Assuming oil level is a proxy for cholesterol
     bloodPressure = 1 + (sticksPerDay * 0.1) + (recoSugarLevel - 0.5) + (cholesterol - 0.5);
 
-    const smokingImpact = sticksPerDay * 0.5;
-    const lungImpact = (100 - lungCapacity) * 0.5;
 
     // Combined impact (weighted to prioritize lung capacity)
-    heart_oxygen_level = 100 - (smokingImpact * 0.4) - (lungImpact * 0.6);
+    heart_oxygen_level = 100 - (sticksPerDay * 0.2) - ((100 - lungCapacity) * 0.3);
 
     // Ensure oxygen level stays within realistic bounds
     heart_oxygen_level = Math.min(100, Math.max(70, heart_oxygen_level));
@@ -485,7 +482,7 @@ function triggerHeartAttack() {
         lifeExpectancy -= 2; // Decrease life expectancy by 1 year
 
         // Chance to reduce sticks per day to 1
-        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+        if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
             currentSticksPerDay = 1;
             alert("The patient has drastically reduced smoking to 1 stick per day after the heart attack.");
         } else {
@@ -519,12 +516,14 @@ function triggerStroke() {
     const survivalProbability = 0.5; // 50% chance to survive
     if (Math.random() < survivalProbability) {
         alert("Stroke occurred! The patient survived.");
+        
+        const influenceEffect = (familyInfluence + socialInfluence) * 0.2;
 
         // Reduce life expectancy slightly
         lifeExpectancy -= 2; // Decrease life expectancy by 2 years
 
         // Chance to reduce sticks per day to 1
-        if (Neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
+        if (neuroplasticity < 0.5 && influenceEffect < 0 ) { // 70% chance to reduce to 1 stick per day
             currentSticksPerDay = 1;
             alert("The patient has drastically reduced smoking to 1 stick per day after the stroke.");
         } else {
@@ -550,7 +549,7 @@ function cogDeclineByAge(age) {
     return 1 / (1 + Math.exp(-r * (age - t0)));
 }
 function triggerCancer() {
-    const survivalProbability = 0.95; // 95% chance to survive
+    const survivalProbability = 0.68; // 95% chance to survive
     if (Math.random() < survivalProbability) {
         alert("Patient has been diagnosed with Stage 1 cancer.");
 
@@ -558,7 +557,7 @@ function triggerCancer() {
         lifeExpectancy -= 5; // Decrease life expectancy by 5 years
 
         // Chance to reduce sticks per day to 1
-        if (Math.random() < 0.7) { // 70% chance to reduce to 1 stick per day
+        if (neuroplasticity < 0.5) { // 70% chance to reduce to 1 stick per day
             currentSticksPerDay = 1;
             alert("The patient has drastically reduced smoking to 1 stick per day after the cancer diagnosis.");
         } else {
@@ -601,7 +600,7 @@ function updateSticksPerDay() {
     }
 
     // 1. Personal stress factor (increases with age and existing consumption)
-    const stressFactor = (lifeStressLevel * 0.1 * stressMultiplier * (1 + nicotineContent / 6))- recoSugarLevel * 0.01 + withdrawal_severity*10;
+    const stressFactor = (lifeStressLevel * 0.1 * stressMultiplier ) - (recoSugarLevel * 0.01) + (withdrawal_severity*10);
 
     // 2. Family influence (-1 to 1 scale)
     // Negative values decrease smoking, positive values increase
@@ -798,20 +797,20 @@ function simStep() {
     // === Update Withdrawal Severity ===
     if (previousSticks > 0 && currentSticksPerDay < previousSticks) {
         // Withdrawal kicks in when there's a drop in consumption
-        withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor * (nicotineContent / 6)); // Scale based on drop and addiction
+        withdrawal_severity = Math.min(1, withdrawal_severity + (drop / 20) * addictionFactor ); // Scale based on drop and addiction
         const recoveryBoost = (drop / previousSticks) * 0.05; // scale down recovery rate
         cognitive_decline = Math.max(0, cognitive_decline - recoveryBoost);
     } else if ( currentSticksPerDay > 0) {
         const declineRate = 0.002 * currentSticksPerDay; // More sticks per day = faster decline
-        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.01 * (nicotineContent / 6)));// If no reduction or still smoking, slowly ease withdrawal
+        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.01 ));// If no reduction or still smoking, slowly ease withdrawal
         cognitive_decline = Math.min(1, cognitive_decline + declineRate); // Small passive increase in decline due to continued smoking
     }else {
         // Fully quit: withdrawal easing and brain recovery
-        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.02)*(nicotineContent / 6));
+        withdrawal_severity = Math.max(0, (withdrawal_severity - 0.02));
         cognitive_decline = Math.max(0, cognitive_decline - 0.005); // Recovery phase: reduce cognitive decline slowly
     }
 
-    Neuroplasticity = Math.max(0, cognitive_decline * intelligenceFromPacks + cognitiveDeclineByAge*0.5 - exercise/70);
+    neuroplasticity = Math.max(0, cognitive_decline * intelligenceFromPacks + cognitiveDeclineByAge*0.5 - exercise/70);
    
 
     // Update health metrics
@@ -830,7 +829,7 @@ function simStep() {
         triggerCancer();
     }
     var lungCapacity = getLungCapacity();
-    var tarAccumulation = getTarAcc();
+    // console.log("Lung Capacity",lungCapacity)
     if (lungCapacity < 30) {
         lifeExpectancy -= 0.5;
         if (lungCapacity < 20 && Math.random() > lungCapacity / 50) {
@@ -1021,22 +1020,22 @@ function runMultipleSimulations(numRuns) {
     
         maxSticks = getMaxCigarettesForAge(currentAge);
         currentSticksPerDay = parseFloat(document.getElementById("sticks_a_day").value) || 0;
-        console.log(`Before while loop: ageOfDeath = ${ageOfDeath}, currentAge = ${currentAge}, sticks = ${currentSticksPerDay}`);
+        // console.log(`Before while loop: ageOfDeath = ${ageOfDeath}, currentAge = ${currentAge}, sticks = ${currentSticksPerDay}`);
         // Run the simulation until death
         while (ageOfDeath === null) {
             simulationYear += ageProgressionRate; // Increment simulation year
             currentAge = parseFloat(document.getElementById("age").value) + simulationYear; // Update current age
             isRunning = true; // Ensure simulation is not running
             simStep();
-            console.log(`Simulation ${i + 1}: Current Age = ${currentAge}, Life Expectancy = ${lifeExpectancy}, Age of Death = ${ageOfDeath}, heartAttack Risk = ${heartAttackRisk}, stroke Risk = ${strokeRisk}, cancer Risk = ${cancerRisk}`);
+            // console.log(`Simulation ${i + 1}: Current Age = ${currentAge}, Life Expectancy = ${lifeExpectancy}, Age of Death = ${ageOfDeath}, heartAttack Risk = ${heartAttackRisk}, stroke Risk = ${strokeRisk}, cancer Risk = ${cancerRisk}`);
             // await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to the browser
         }
         // print lung capacity and tar accumulation
         var lungCapacity = getLungCapacity();
         var tarAccumulation = getTarAcc();
-        console.log(`Lung Capacity = ${lungCapacity}, Tar Accumulation = ${tarAccumulation}`);
+        // console.log(`Lung Capacity = ${lungCapacity}, Tar Accumulation = ${tarAccumulation}`);
         // Record the age of death
-        console.log(`Cause of Death = ${causeOfDeath}`);
+        console.log(`Simulation ${i+1} Cause of Death = ${causeOfDeath}`);
         deathAges.push(ageOfDeath);
         // Store cause of death in a dictionary with cause of death as key and count as value
         if (listOfDeath[causeOfDeath]) {
@@ -1070,7 +1069,7 @@ function resetSimulationState() {
     addictionFactor = 0;
     withdrawal_severity = 0;
     cognitive_decline = 0;
-    Neuroplasticity = 0;
+    neuroplasticity = 0;
     bloodPressure = 1;
     heart_oxygen_level = 100;
     heartStress = 0;
@@ -1089,9 +1088,7 @@ function resetSimulationState() {
     bloodCells = [];
     resetRespiratorySystem(); // Reset the respiratory system state
     if (typeof airParticles !== "undefined") airParticles.length = 0;
-    // if (typeof tarAccumulation !== "undefined") tarAccumulation = 0;
-    // if (typeof lungCapacity !== "undefined") lungCapacity = 100;
-    updateInitialSticks(); // <-- Ensure this is called last!
+    updateInitialSticks();
     currentSticksPerDay = initialSticksPerDay;
     console.log("resetSimulationState: ageOfDeath reset to", ageOfDeath, "currentAge:", currentAge, "sticks:", currentSticksPerDay);
 }
