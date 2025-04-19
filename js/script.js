@@ -842,7 +842,7 @@ function simStep() {
         triggerStroke();
         console.log("Post Stroke Triggered: Risk =", strokeRisk, "Life Expectancy after trigger=", lifeExpectancy);
     }
-    if (cancerRisk > 0.3 && Math.random() < cancerRisk / 50) {
+    if (cancerRisk > 0.2 && Math.random() < cancerRisk / 50) {
         console.log("Cancer Triggered: Risk =", cancerRisk);
         if (!hasStage1Cancer) {
             triggerStage1Cancer();
@@ -1100,10 +1100,10 @@ async function runMultipleSimulations(numRuns) {
             causeOfDeath, // Cause of Death
             lifeExpectancyAtDeath.toFixed(1), // Life Expectancy
             sticksAtDeath.toFixed(1), // Sticks per Day at Age of Death
-            (heartAttackRiskAtDeath * 100).toFixed(1) + "%", // Heart Attack Risk at Death
-            (strokeRiskAtDeath * 100).toFixed(1) + "%", // Stroke Risk at Death
-            (cancerRiskAtDeath * 100).toFixed(1) + "%", // Cancer Risk at Death
-            lungCapacityAtDeath.toFixed(1) + "%", // Lung Capacity at Death
+            (heartAttackRiskAtDeath * 100).toFixed(1), // Heart Attack Risk at Death
+            (strokeRiskAtDeath * 100).toFixed(1), // Stroke Risk at Death
+            (cancerRiskAtDeath * 100).toFixed(1), // Cancer Risk at Death
+            lungCapacityAtDeath.toFixed(1), // Lung Capacity at Death
             experiencedConditions.length > 0 ? `"${experiencedConditions.join(", ")}"` : "None", // Health conditions experienced in one cell
             gradient // Gradient between the two points
         ];
